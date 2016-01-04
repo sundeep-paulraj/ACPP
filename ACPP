@@ -7,7 +7,7 @@ print '######## Anti-Cancer Peptide Predictor#####################
 #         Date: 23-09-2015
 #'."\n";
 
-use WWW::Mechanize;
+#use WWW::Mechanize;
 use List::Util qw[max];
 #use CGI qw(:standard);
 #use CGI::Carp qw(fatalsToBrowser);
