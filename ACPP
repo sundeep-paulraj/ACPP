@@ -1,0 +1,687 @@
+#! /usr/bin/perl
+
+print '######## Anti-Cancer Peptide Predictor#####################
+#        Developed by SARAVANAN VIJAYAKUMAR
+#         Centre for Bioinformatics, Pondicherry University
+#         brsaran@gmail.com
+#         Date: 23-09-2015
+#'."\n";
+
+use WWW::Mechanize;
+use List::Util qw[max];
+#use CGI qw(:standard);
+#use CGI::Carp qw(fatalsToBrowser);
+#use MIME::Lite; #To be installed
+use List::Util qw(sum);
+
+###Global Exit Flag;
+my $Global_Exit=0;
+my $lmn;
+######
+
+#####Parsing from PHP
+print "Multiple Peptides (1)\nProtein Scan (2)\nSingle Peptide with Mutation (3)\nChoose option:";
+$option1 = <STDIN>;
+
+if(($option1 >3) || ($option1 <1)){
+	print "\nInvalid Option !";	
+	exit;
+}elsif ($option1 == 1){
+	print "Enter the File name containing Multiple Peptides:";
+	$new_fil = <STDIN>;
+	open (FIL,"$new_fil");
+	@new_tem = <FIL>;
+	$Rawseq[0] = join("",@new_tem);
+	if($Rawseq[0] eq ""){
+		print "File empty ! or File not found !";
+		exit;
+	}
+	$Seq_Type = 'MNM';
+	$Seq_Type1 = "Multiple Peptide Mode";
+}elsif ($option1 == 3){
+	print "Enter the File name containing Single Peptide:";
+	$new_fil = <STDIN>;
+	open (FIL,"$new_fil");
+	@new_tem = <FIL>;
+	$Rawseq[0] = join("",@new_tem);
+	if($Rawseq[0] eq ""){
+		print "File empty ! or File not found !";
+		exit;
+	}
+	$Seq_Type = 'SM';
+	print "Enter Mutation Pattern:";
+	chomp($Mutation_Pattern = <STDIN>);
+	$Seq_Type1 = "Single Peptide with Mutation Mode";
+}elsif ($option1 == 2){
+	print "Enter the File name containing Single Protein:";
+	$new_fil = <STDIN>;
+	open (FIL,"$new_fil");
+	@new_tem = <FIL>;
+	$Rawseq[0] = join("",@new_tem);
+	if($Rawseq[0] eq ""){
+		print "File empty ! or File not found !";
+		exit;
+	}
+	$Seq_Type = 'SCAN';
+	print "Enter Length of peptide to be scanned:";	
+	chomp($Pep_LEN = <STDIN>);
+	$Seq_Type1 = "Protein Scan Mode";
+}
+
+print "Enter Threshold (default 0.5):";
+$Threshold_in = <STDIN>;
+
+
+$Rawseq[0]=~s/ //g;
+$Rawseq[0]= lc($Rawseq[0]);
+@Seq_hold1 = split('\s',$Rawseq[0]);
+
+########
+$Threshold_in=~s/\s//g;
+if($Threshold_in=~m/[A-z]/g){
+	print "Error: Invalid Threshold! Contains character\n";
+	$Global_Exit = 'X1';
+}
+#### Sequence Validation
+if($Seq_Type eq 'SM'){
+	if(($Rawseq[0]=~s/\>/\>/g) > 1){
+		print "Error: Single peptide with mutation selected, but multiple sequences found!\n";
+		$Global_Exit = '1A';		
+	}elsif(($Mutation_Pattern!~m/\-/g) || ($Mutation_Pattern!~m/\;/g)){
+		print "Error: Pattern not in acceptable format! Check Mutation pattern help!\n";
+		$Global_Exit = '1B';
+	}elsif(($Rawseq[0]=~s/\>/\>/g) == 0){
+		print "Error: Sequence not in FASTA format!\n";
+		$Global_Exit = '1C'; 
+	}else{
+		@Rawseq1 = &Pattern_Extractor($Mutation_Pattern,@Seq_hold1[2]); #single peptide
+	}
+		
+	if(length($Seq_hold1[2]) > 150){
+		print "Error: Peptide length greater than 150 residues!\n";
+		$Global_Exit = '1D'; 
+	}elsif(length($Seq_hold1[2]) == 0){
+		print "Error: Peptide length 0 or no peptides!\n";
+		$Global_Exit = '1E'; 
+	}		
+$lmn=0;
+}
+
+#####
+
+###Sequence Parsing
+
+if($Seq_Type eq 'MNM'){#multiple sequence input parse
+	if(($Rawseq[0]=~s/\>/\>/g) > 100){
+		print "Error: Sequene input crosses the limit of 100 !\n";
+		$Global_Exit = '2A';
+	}elsif(($Rawseq[0]=~s/\>/\>/g) == 0 ){
+		print "Error: Sequence not in FASTA format!\n";
+		$Global_Exit = '2B';
+	}
+	else{#Multiple FASTA collection
+		my $i;
+		my $j;
+		foreach (@Seq_hold1){
+
+			if(substr(@Seq_hold1[$j],0,1) eq ">"){
+                		$i=$i+1;
+                		@FASTA_Header[$i]=substr(@Seq_hold1[$j],1,10);
+                		$j++;
+             		}else{
+                  		@Rawseq1[$i].= @Seq_hold1[$j];
+                  		$Rawseq1[$i]=~s/\s//g;
+                  		$j++;
+                  		$k++;
+             		}
+
+		}
+
+	}	
+
+	for($i=1;$i<@Rawseq1;$i++){#Validation for 0 length peptides
+		$Rawseq1[$i] = uc ($Rawseq1[$i]);
+		if(length($Rawseq1[$i])==0){
+			print "Error: Peptide $FASTA_Header[$i] has no residues!\n";
+			$Global_Exit = '2C';
+		}elsif(length($Rawseq1[$i])>150){
+			print "Error: Peptide $FASTA_Header[$i] has residue length more than 150!\n";
+			$Global_Exit = '2D';
+		}
+	}
+$lmn=1;
+}
+
+###Sequence Parsing Protein Scan
+
+if($Seq_Type eq 'SCAN'){#SCAN
+	if(($Rawseq[0]=~s/\>/\>/g) > 1){
+		print "Error: For protein Scan only 1 sequence is allowed!\n";
+		$Global_Exit = '2A';
+	}elsif(($Rawseq[0]=~s/\>/\>/g) == 0 ){
+		print "Error: Sequence not in FASTA format!\n";
+		$Global_Exit = '2B';
+	}
+	else{#Multiple FASTA collection
+		my $i;
+		my $j;
+		foreach (@Seq_hold1){
+
+			if(substr(@Seq_hold1[$j],0,1) eq ">"){
+                		$i=$i+1;
+                		@FASTA_Header[$i]=substr(@Seq_hold1[$j],1,10);
+                		$j++;
+             		}else{
+                  		@Rawseq1[$i].= @Seq_hold1[$j];
+                  		$Rawseq1[$i]=~s/\s//g;
+                  		$j++;
+                  		$k++;
+             		}
+
+		}
+
+	}	
+
+		$Rawseq1[1] = uc ($Rawseq1[1]);
+		$Pro_Scan_In = $Rawseq1[1];
+		if(length($Pro_Scan_In)==0){
+			print "Error: Peptide $FASTA_Header[$i] has no residues!\n";
+			$Global_Exit = '2C';
+		}elsif(length($Pro_Scan_In)<$Pep_LEN){
+			print "Error: Peptide fragment length is greater than input protein!!!\n";
+			$Global_Exit = '2D';
+		}elsif($Pep_LEN > 150){
+			print "Error: Peptide fragment length should be less than 150!!!\n";
+			$Global_Exit = '2D';
+		}elsif($Pep_LEN < 5){
+			print "Error: Peptide fragment length should be at least 5!!!\n";
+			$Global_Exit = '2D';
+		}elsif(length($Pro_Scan_In)>2000){
+			print "Error: Input protein length should be less than 2000!!!\n";
+			$Global_Exit = '2D';
+		}
+	
+for($sar=0;$sar<((length($Pro_Scan_In)-$Pep_LEN)+1);$sar++){
+	@Rawseq1[$sar] = substr($Pro_Scan_In,$sar,$Pep_LEN);
+	@Scan_Header[$sar] = ($sar+1)."-".($sar+$Pep_LEN); 
+
+}
+$lmn=2;
+}
+
+#####################
+
+
+#####Main Validation and Execution
+
+if($Global_Exit ne '0'){
+	print "Exiting due to ERROR!\n";
+}else{
+	#Job File Creation
+	###Job processing
+	
+	$Job_Id_path = `pwd`; #You can set accordingly
+	$Job_Id_path =~s/\n//g;
+	$Job_FILE = &generate_random_string(8).&generate_random_string(8);
+	$Job_Id = $Job_Id_path.'/'.$new_fil.'_out.csv';
+
+	my $Job_content = "\nProcessing....Please wait\n";
+	open(TTT,">$Job_Id");
+	print TTT $Job_content; 
+	close(TTT);
+	print $Job_content;
+	#job Processing Ends
+
+	#Temp Path
+	
+	#Feature Calculation
+	if(($lmn==0) || ($lmn==2)){
+		for($lmn=0;$lmn<@Rawseq1;$lmn++){
+			$output_BINOM_CN.= &Type_I($Rawseq1[$lmn]).",".&Type_II($Rawseq1[$lmn]).",".&Type_III($Rawseq1[$lmn]).",X\n";
+			$Mol_W_Array[$lmn]=&Mol_W_Calc($Rawseq1[$lmn]);
+			$H_Phobic_Val[$lmn] = &H_Phobic_Calc($Rawseq1[$lmn]);
+			$H_Philic_Val[$lmn] = &H_Philic_Calc($Rawseq1[$lmn]);
+			$H_Charge_Val[$lmn] = &Charge_Calc($Rawseq1[$lmn]);
+		}
+	}elsif($lmn==1){
+		for($lmn=1;$lmn<@Rawseq1;$lmn++){
+			$output_BINOM_CN.= &Type_I($Rawseq1[$lmn]).",".&Type_II($Rawseq1[$lmn]).",".&Type_III($Rawseq1[$lmn]).",X\n";
+			$Mol_W_Array[$lmn]=&Mol_W_Calc($Rawseq1[$lmn]);
+			$H_Phobic_Val[$lmn] = &H_Phobic_Calc($Rawseq1[$lmn]);
+			$H_Philic_Val[$lmn] = &H_Philic_Calc($Rawseq1[$lmn]);
+			$H_Charge_Val[$lmn] = &Charge_Calc($Rawseq1[$lmn]);
+		}
+	}
+	#Feature Save
+	$arff_file = $Job_Id_path.'/'.&generate_random_string(8).'.arff';
+
+	&TestArff('C','N',$output_BINOM_CN,$arff_file);
+
+	####
+	#Machine Learner processor
+	@R1 = &ML_Test("CN.model",$arff_file);
+	for($i=0;$i<5;$i++){
+	     shift(@R1);
+	}
+
+	my $xyx;
+	for($i=0;$i<@R1;$i++){
+		@RR1 = split(':',$R1[$i]);
+		if(substr($RR1[2],0,1) eq "C"){
+			$C_Loc_Score[$xyx] = substr($RR1[2],1,8);
+                	$C_Loc_Score[$xyx]=~s/\+//g;
+			$xyx++;
+		}else{
+			$C_Loc_Score[$xyx] = substr($RR1[2],1,8);
+                	$C_Loc_Score[$xyx]=~s/\+//g;
+			$C_Loc_Score[$xyx]=(1-$C_Loc_Score[$xyx]);
+			$xyx++;
+		}
+		if($C_Loc_Score[$xyx-1] >= $Threshold_in){
+			$Pred_out[$xyx-1] = "ACP";
+		}else{
+			$Pred_out[$xyx-1] = "NACP";
+		}
+	}
+	################
+	@R1=();
+	unlink($arff_file);
+
+####### Main Ends
+
+######Result Display
+#my $Ant_path_S = $Job_Id_path."/header/ant_out_php_start";
+#my $Ant_path_E = $Job_Id_path."/header/ant_out_php_end";
+
+#open(FIL,"$Ant_path_S");
+#@Start_Res = <FIL>;
+#close(FIL);
+
+#open(FIL,"$Ant_path_E");
+#@End_Res = <FIL>;
+#close(FIL);
+
+$Mid1 = "Parameters Selected:\nInput file:".$new_fil."\nMode:".$Seq_Type1."\nThreshold:".$Threshold_in."\n";
+#$Mid2 = '<table><tr><th>Peptide</th><th>Prediction</th><th>SVM Score</th><th>Mol.Wt (Da)</th><th>Hb (%)</th><th>Hp (%)</th><th>Charge</th></tr>';
+
+if($Seq_Type eq 'MNM'){
+	for($i=0;$i<@C_Loc_Score;$i++){
+		if(length($Rawseq1[$i+1])>50){substr($Rawseq1[$i+1],50,0)="\n";}
+		if(length($Rawseq1[$i+1])>100){substr($Rawseq1[$i+1],100,0)="\n";}		
+		$Mid2.= $FASTA_Header[$i+1].','.$Rawseq1[$i+1].','.$Pred_out[$i].','.sprintf("%.2f",$C_Loc_Score[$i]).','.$Mol_W_Array[$i+1].','.$H_Phobic_Val[$i+1].','.$H_Philic_Val[$i+1].','.$H_Charge_Val[$i+1]."\n";
+	}
+}elsif($Seq_Type eq 'SM'){
+	for($i=0;$i<@C_Loc_Score;$i++){
+		if(length($Rawseq1[$i])>50){substr($Rawseq1[$i],50,0)="\n";}
+		if(length($Rawseq1[$i])>100){substr($Rawseq1[$i],100,0)="\n";}		
+		$Mid2.= $Motif_in[$i].','.$Rawseq1[$i+1].','.$Pred_out[$i].','.sprintf("%.2f",$C_Loc_Score[$i]).','.$Mol_W_Array[$i+1].','.$H_Phobic_Val[$i+1].','.$H_Philic_Val[$i+1].','.$H_Charge_Val[$i+1]."\n";
+	}	
+}elsif($Seq_Type eq 'SCAN'){
+		$Mid1.="Pepetide Length:".$Pep_LEN."\n";		
+	for($i=0;$i<@C_Loc_Score;$i++){
+		if(length($Rawseq1[$i])>50){substr($Rawseq1[$i],50,0)="\n";}
+		if(length($Rawseq1[$i])>100){substr($Rawseq1[$i],100,0)="\n";}
+		$Mid2.= $Scan_Header[$i].','.$Rawseq1[$i].','.$Pred_out[$i].','.sprintf("%.2f",$C_Loc_Score[$i]).','.$Mol_W_Array[$i].','.$H_Phobic_Val[$i].','.$H_Philic_Val[$i].','.$H_Charge_Val[$i]."\n";
+	}	
+}
+$Mid1.= "\n\nIdentifier,Peptide,Prediction,SVM Score,Mol.weight (Da),Hb %,Hp %, Charge\n";
+
+open(FIL,">$Job_Id");
+print FIL $Mid1.$Mid2. "\n\n".'ACP - Anticancer peptide; NACP - Non-Anticancer peptide; SVM - Support vector machine; Da - Dalton; Hb - Hydrophobic residue; Hp - Hydrophilic residue;';
+close(FIL);
+
+print "Job Finished Suessfully !\n\nOutput stored in $Job_Id";
+}
+####Result Display Ends
+
+
+
+
+################ FUNCTIONS
+################### FUNCTIONS FOR FEATURE VECTOR CALCULATION ######################################
+
+sub Type_I{
+    my($param_one)=@_;
+
+    $param_one = uc $param_one;
+    @SLC = qw(A C D E F G H I K L M N P Q R S T V W Y);
+    $Length_Prt = length($param_one);
+    my $i=0;
+#    Measure Calculation
+    foreach(@SLC){
+             if($param_one =~m/$SLC[$i]/g){
+                 $nX[$i] = ($param_one =~s/$SLC[$i]/$SLC[$i]/g);
+             }else{
+                 $nX[$i] = 0;
+
+             }
+             $i++;
+    }
+    #Measure Calculation
+    for($i=0;$i<$Length_Prt;$i++){
+         $pX[$i] = $nX[$i]/$Length_Prt;
+         #$pX[$i] = sprintf "%.2f",$pX[$i];
+    }
+    #Theoretical Mean Calculation
+    @Res_Codon_Occ = qw(4 2 2 2 2 4 2 3 2 6 1 2 4 2 6 6 4 4 1 2);
+    my $j=0;
+    foreach(@Res_Codon_Occ){
+        $piX[$j] = $Res_Codon_Occ[$j]/61;
+        #$piX[$j] = sprintf "%.2f",$piX[$j];
+        $j++;
+    }
+    #Theoretical variance Calculation
+    for($i=0;$i<20;$i++){
+              $Theo_Variance[$i] = ($piX[$i]*(1-$piX[$i]))/$Length_Prt;
+              #$Theo_Variance[$i] = sprintf "%.2f",$Theo_Variance[$i];
+    }
+    #Type I Parameter Calculation
+    for($i=0;$i<20;$i++){
+        eval{($pX[$i] - $piX[$i])/(sqrt($Theo_Variance[$i]));};
+        if($@){
+              $Type_I_Value[$i] = 0.00;
+        }else{
+              $Type_I_Value[$i] = ($pX[$i] - $piX[$i])/(sqrt($Theo_Variance[$i]));
+              #$Type_I_Value[$i] = sprintf "%.2f", $Type_I_Value[$i];
+        }
+
+    }
+    $vector1 = join(",",@Type_I_Value);
+    return $vector1;
+}
+############################################################################
+sub TRACE_POS{
+    my($STRING,$CHAR)= @_;
+    my $ixyz=0;
+
+    my $sum=0;
+    do{
+       $Holder[$ixyz] = index($STRING,$CHAR,$Crawler)+1;
+       $sum+=$Holder[$ixyz];
+       $Crawler = $Holder[$ixyz];
+       $ixyz++;
+       $ex = index($STRING,$CHAR,$Crawler);
+    }until ($ex == -1);
+
+    return $sum;
+ }
+###########################################################################
+sub Type_II{
+    my($param_two) = @_;
+
+    $param_two = uc $param_two;
+    @SLC = qw(A C D E F G H I K L M N P Q R S T V W Y);
+    $Length_Prt = length($param_two);
+    my $i=0;
+    #Measure Calculation
+    foreach(@SLC){
+             if($param_two =~m/$SLC[$i]/g){
+                 $nX[$i] = ($param_two =~s/$SLC[$i]/$SLC[$i]/g);
+             }else{
+                 $nX[$i] = 0;
+             }
+             $i++;
+    }
+    for($i=0;$i<20;$i++){
+        if($nX[$i] == 0){
+              $M_m[$i] = 0.0;
+              $T_v[$i]= 0.0;
+              $P_V[$i] = 0.0;
+        }else{
+              $M_m[$i]= &TRACE_POS($param_two,$SLC[$i])/$nX[$i];
+              $T_v[$i] = (($Length_Prt+1)*($Length_Prt-$nX[$i])/(12*$nX[$i]));    #Theoritical Variance Calculation
+              $T_m[$i] = ($Length_Prt+1)/2; #Theoritical Mean
+              $P_V[$i] = ($M_m[$i]-$T_m[$i])/(sqrt($T_v[$i]));    #Parameter Value Calculation
+        }
+    }
+    $vector2 = join(",",@P_V);
+    @SLC=();
+    @nX=();
+    @M_m=();
+    @T_v=();
+    @P_V=();
+    return $vector2;
+}
+###################################
+sub COMPLEX_POS{
+    my($STRING,$CHAR)= @_;
+    my $i=0;
+    my $sum=0;
+    my $Crawler=0;
+    my $ex;
+    my $k;
+    do{
+       $HolderX[$i] = index($STRING,$CHAR,$Crawler)+1;
+       $sum+=$HolderX[$i];
+       $Crawler = $HolderX[$i];
+       $i++;
+       $ex = index($STRING,$CHAR,$Crawler);
+    }until ($ex == -1);
+    $ret=0;
+    for($k=0;$k<@HolderX;$k++){
+             $elite = ($STRING=~s/$CHAR/$CHAR/g);
+             if($elite!= 0){
+                 $ret+= ($HolderX[$k]- (($sum/$elite)))**2;
+             }else{
+                 $ret+=0;
+             }
+    }
+        @HolderX=();
+    return $ret;
+ }
+ ###################################
+sub Type_III{
+    my($param_three) = @_;
+
+
+    @SLC = qw(A C D E F G H I K L M N P Q R S T V W Y);
+    $Length_Prt = length($param_three);
+    my $i=0;
+    foreach(@SLC){
+             if($param_three =~m/$SLC[$i]/g){
+                 $nX[$i] = ($param_three =~s/$SLC[$i]/$SLC[$i]/g);
+             }else{
+                 $nX[$i] = 0;
+             }
+             $i++;
+    }
+    $const1 = ($Length_Prt-1)/$Length_Prt;
+    for($i=0;$i<20;$i++){
+         if($nX[$i] == 1){
+             $const2 = 0.0;
+         }else{
+             $const2 = 1/($nX[$i]-1);
+         }
+
+         $const3 = &COMPLEX_POS($param_three,$SLC[$i]);
+         $Me_m[$i] = $const1*$const2*$const3;#Measure 3
+         $Te_m[$i] = (($Length_Prt**2)-1)/12;
+
+         if($nX[$i]==0){
+            $Te_v[$i] = 0;
+         }else{
+            if($nX[$i] == 1){
+                $Te_v[$i] = 0.0;
+            }else{
+                $Te_v[$i] = (($Length_Prt-$nX[$i])*(($Length_Prt-1)**2)*($Length_Prt+1)*((2*$nX[$i]*$Length_Prt)+(3*$Length_Prt)+(3*$nX[$i])+3))/(360*$nX[$i]*($nX[$i]-1)*$Length_Prt);
+            }
+         }
+         if($Te_v[$i]!=0){
+             $F_V[$i] = ($Me_m[$i]-$Te_m[$i])/(sqrt($Te_v[$i]));    #Parameter Value Calculation
+         }else{
+             $F_V[$i]= 0.0;
+         }
+#         print $F_V[$i]."\n";
+    }
+    $vector3 = join(',',@F_V);
+    @SLC=();
+    @nX=();
+    @Te_v=();
+    @F_V=();
+    return $vector3;
+}
+############ Function for feature vector ENDS!
+
+#####Other Functions
+
+sub Vec_save{
+
+my ($y,$con)= @_;
+     open (TT,">$y");
+     print TT $con;
+     close(TT);
+}
+sub ML_Test{
+my($MODEL,$fil,$xsav)= @_;
+    $result = `java -classpath weka.jar weka.Run weka.classifiers.functions.LibSVM -T $fil -l $MODEL -p 0`;
+    $result=~s/ //g;
+    @Cont = split('\n',$result);
+    return @Cont;
+    print $result; <STDIN>;
+}
+sub TestArff{
+my($label1,$label2,$PREDICT,$F,$C_Attri)= @_;
+    $PREDICT=~s/X/$label1/g;
+    $TEST ="\@relation whatever \n \@attribute 1 numeric\n\@attribute 2 numeric\n\@attribute 3 numeric\n\@attribute 4 numeric\n\@attribute 5 numeric\n\@attribute 6 numeric\n\@attribute 7 numeric\n\@attribute 8 numeric\n\@attribute 9 numeric\n\@attribute 10 numeric\n\@attribute 11 numeric\n\@attribute 12 numeric\n\@attribute 13 numeric\n\@attribute 14 numeric\n\@attribute 15 numeric\n\@attribute 16 numeric\n\@attribute 17 numeric\n\@attribute 18 numeric\n\@attribute 19 numeric\n\@attribute 20 numeric\n\@attribute 21 numeric\n\@attribute 22 numeric\n\@attribute 23 numeric\n\@attribute 24 numeric\n\@attribute 25 numeric\n\@attribute 26 numeric\n\@attribute 27 numeric\n\@attribute 28 numeric\n\@attribute 29 numeric\n\@attribute 30 numeric\n\@attribute 31 numeric\n\@attribute 32 numeric\n\@attribute 33 numeric\n\@attribute 34 numeric\n\@attribute 35 numeric\n\@attribute 36 numeric\n\@attribute 37 numeric\n\@attribute 38 numeric\n\@attribute 39 numeric\n\@attribute 40 numeric\n\@attribute 41 numeric\n\@attribute 42 numeric\n\@attribute 43 numeric\n\@attribute 44 numeric\n\@attribute 45 numeric\n\@attribute 46 numeric\n\@attribute 47 numeric\n\@attribute 48 numeric\n\@attribute 49 numeric\n\@attribute 50 numeric\n\@attribute 51 numeric\n\@attribute 52 numeric\n\@attribute 53 numeric\n\@attribute 54 numeric\n\@attribute 55 numeric\n\@attribute 56 numeric\n\@attribute 57 numeric\n\@attribute 58 numeric\n\@attribute 59 numeric\n\@attribute 60 numeric\n\@attribute LABEL {$label1,$label2}\n\n\@data\n$PREDICT";
+    &Vec_save($F,$TEST);
+}
+#Random File name generator
+sub generate_random_string
+{
+	my $length_of_randomstring=shift;# the length of 
+		 # the random string to generate
+
+	my @chars=('a'..'z','A'..'Z','0'..'9');
+	my $random_string;
+	foreach (1..$length_of_randomstring) 
+	{
+		# rand @chars will generate a random 
+		# number between 0 and scalar @chars
+		$random_string.=$chars[rand @chars];
+	}
+	return $random_string;
+}
+
+###Mutatation processor
+sub Mutate_Processor{
+my($Pat_Pos, $Pat_Char, $Seq_pat_in, $Pat_finder) = @_;
+
+    if($Pat_Pos < length($Seq_pat_in)){
+        $Pat_Pos = $Pat_Pos-1;
+        $Pat_Char = uc($Pat_Char);
+	if($Pat_finder eq '*'){
+	        substr($Seq_pat_in,$Pat_Pos,1)='';
+	}elsif($Pat_finder eq '^'){
+		substr($Seq_pat_in,$Pat_Pos,0)=$Pat_Char;	
+	}elsif($Pat_finder eq '"'){
+		substr($Seq_pat_in,$Pat_Pos,0)='';
+	}else{
+        substr($Seq_pat_in,$Pat_Pos,1)=$Pat_Char;
+	}
+        return $Seq_pat_in;
+    }else{
+        $Global_Exit = 2;
+        return "";
+    }
+}
+#Pattern Extract
+
+sub Pattern_Extractor{
+
+my ($in,$Seq_pat) = @_;
+my $x_pat;
+@Motif_in = split(";",$in);
+
+	foreach $x_pat(@Motif_in){
+	         $x_pat=~s/\s//g;
+	         if($x_pat ne ""){
+	             if($x_pat ne '@#'){
+	                  $x_pat=~m/(.*)\-(.*)/g;
+	                  $Te_Pos = $1;
+	                  $Te_Pat = substr($Te_Pos,0,1);
+			  if(($Te_Pat eq '*') ||($Te_Pat eq '^')) {
+				$Te_Pos = substr($Te_Pos,1,1);
+			  }
+			  $Te_Char = $2;
+	                  $Out_F[$o] = &Mutate_Processor($Te_Pos,$Te_Char,$Seq_pat,$Te_Pat)."\n";
+			  $o++;
+	             }
+	         }
+
+	}
+	return @Out_F;
+}
+
+###Molecular Weight Calculator
+
+sub Mol_W_Calc{
+my ($SequenceW) = @_;
+#The weights below have water subtracted
+$SequenceW = uc($SequenceW);
+my $Molweight=0;
+my @arrayOfAA = ("A","C","D","E","F","G","H","I","K","L","M","N","P","Q","R","S","T","V","W","Y");
+my @arrayOfMw = ('71.08', '103.14', '115.09', '129.12','147.18', '57.06', '137.15', '113.17', '128.18', '113.17', '131.21', '114.11', '97.12', '128.41', '156.20', '87.08', '101.11', '99.14', '186.21', '163.18');
+$water =  18.015;
+for($i=0;$i<@arrayOfAA;$i++){
+     $MW_count = ($SequenceW=~s/$arrayOfAA[$i]/$arrayOfAA[$i]/g);
+     $Molweight+= @arrayOfMw[$i]*$MW_count;
+}
+$Molweight+=$water; #add the weight of water for the ends of the protein
+return sprintf("%.2f",$Molweight);
+}
+
+#### Hydrohobic Calc
+
+sub H_Phobic_Calc{
+
+my($Seq_IN)=@_;
+$Seq_IN=~s/\s//g;
+my $Pho_Per;
+	my @Hr1 = ('C','L','V','I','M','F','W');
+	
+	foreach $x(@Hr1){
+		$Pho_Per+= ($Seq_IN=~s/$x/$x/gi);
+	}
+	return (sprintf("%.3f",($Pho_Per/length($Seq_IN)))*100).'%';
+}	
+sub H_Philic_Calc{
+
+my($Seq_IN1)=@_;
+$Seq_IN1=~s/\s//g;
+my $Phi_Per;
+	my @Hr2 = ('R','K','E','D','Q','N');
+	
+	foreach $y(@Hr2){
+		$Phi_Per+= ($Seq_IN1=~s/$y/$y/gi);
+	}
+	
+	return (sprintf("%.3f",($Phi_Per/length($Seq_IN1)))*100).'%';
+}
+sub Charge_Calc{
+my($Seq_IN2)=@_;
+$Seq_IN2=~s/\s//g;
+my ($Tot_Charge, $PosIE, $NegIE, $NeuIE)=0;
+	
+	my @Plus_1 = qw(K R);
+	my @Minus_1 = qw(D E);
+	my @Histi = qw(H);
+	
+	foreach $z1(@Plus_1){
+		$PosIE+=($Seq_IN2=~s/$z1/$z1/gi);
+	}
+	foreach $z2(@Minus_1){
+		$NegIE+=($Seq_IN2=~s/$z2/$z2/gi);
+	}
+	foreach $z3(@Histi){
+		$NeuIE+=($Seq_IN2=~s/$z3/$z3/gi);
+	}
+	$Tot_Charge = ($PosIE + ($NeuIE/2)) - $NegIE;
+
+	return (sprintf("%.2f",$Tot_Charge));
+	
+}
+
+
+
+
+	

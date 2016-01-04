@@ -1,0 +1,19 @@
+Mutation pattern Help
+~~~~~~~~~~~~~~~~~~~~~~
+
+1. The pattern should either start with '*' (for deletion) or '^' (for insertion). For substitution no special characters are required.
+2. The second character should be an integer, that is the position in the peptide which has to be deleted, inserted, or substituted.
+3. The third character should be '-'.
+4. The fourth character should be the residue (amino acid single letter code).
+5. Multiple patterns can be given, in that case each patten should be separted by ';'.
+6. Example to delete residue at position 5. Pattern: 
+	*5-x;
+7. Example to insert residue A at position 9. Pattern: 
+	^9-A;
+8. Example to substitute residue T at position 11. Pattern: 
+	11-T;
+9. Example for multiple pattern. Pattern: 
+	5-Y;*4-x;^7-P;
+10. Add "-x to include the result of the given input as such without mutation. Example: 
+	5-Y;"-x; 
+	will generate output for substitution of Y at position 5 as well as for the given input as such.

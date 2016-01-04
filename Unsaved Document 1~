@@ -1,0 +1,895 @@
+#!/usr/bin/perl -w
+######## AntiCP #####################
+#        Developed by SARAVANAN VIJAYAKUMAR
+#         Centre for Bioinformatics, Pondicherry University
+#         brsaran@gmail.com
+#         Date: 23-09-2013
+#
+
+use WWW::Mechanize;
+use List::Util qw[max];
+use CGI qw(:standard);
+use CGI::Carp qw(fatalsToBrowser);
+use MIME::Lite; #To be installed
+use List::Util qw(sum);
+
+if($ENV{REQUEST_METHOD} eq "POST"){
+     my $buffer="";
+     read(STDIN,$buffer,$ENV{CONTENT_LENGTH})==$ENV{CONTENT_LENGTH} or return undef;
+     @pairs=split(/&/,$buffer);
+     ($name,$namevalue)=split(/=/,$pairs[0]);
+ }
+ print "Content-type: text/html\n\n";
+ @vals = split('\n',$pairs[0]);
+
+ for(my $i=0;$i<@vals;$i++){
+           if($vals[$i]=~m/input_seq/g){
+               for($j=$i+1;$j<@vals;$j++){
+                    if($vals[$j]=~m/----/g){
+                                $j=@vals;
+                    }else{
+                         $Rawseq[0].= $vals[$j];;
+                    }
+               }
+           }
+	   if($vals[$i]=~m/jobtitle/g){
+		$Job_tit = $vals[$i+2];
+	   }		
+	   if($vals[$i]=~m/BLASTO/g){
+		$BOP = 1;
+	   }	
+	   if($vals[$i]=~m/email/g){
+		$Job_email = $vals[$i+2];
+	   }		
+	   
+ }
+$Rawseq[0]=~s/ //g;
+@Seq_hold1 = split('\s',$Rawseq[0]);
+#$Rawseq[0] = uc($Rawseq[0]);
+#$Rawseq[0] =~s/\s//g;
+
+if(($Rawseq[0]=~s/\>/\>/g) > 1150){
+ 	$Seq_OK = '1';
+ }else{
+#Fasta Parsing
+	my $i;
+	my $j;
+	foreach(@Seq_hold1){
+         if(substr(@Seq_hold1[$j],0,1) eq ">"){
+                $i=$i+1;
+                @Seq_submit1[$i]= @Seq_hold1[$j]."\n";
+                @FASTA_Header[$i]=substr(@Seq_hold1[$j],1,10);
+                #@FASTA_Header[$i]=~m/\|(.*)\|/g;
+                #@FASTA_Header[$i]= $1;
+                $j++;
+             }
+             else{
+                  @Rawseq1[$i].= @Seq_hold1[$j];
+                  $Rawseq1[$i]=~s/\s//g;
+                  @Seq_submit1[$i].= @Seq_hold1[$j];
+                  $j++;
+                  $k++;
+             }
+	}
+
+##FASTA PArse end
+      	for($i=1;$i<@Rawseq1;$i++){
+		if(length($Rawseq1[$i])< 30){
+			$Seq_OK = '2';
+		}	
+      	}
+}
+
+##Main Proceed Check
+
+if($Seq_OK==1){
+print  "Error! : Sequence more than 50";
+}elsif($Seq_OK==2){
+print "Error! : Some of the input sequence length is less than 30";
+} 
+elsif($Seq_OK==0){
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Opening FASTA
+
+for($lmn=1;$lmn<@Rawseq1;$lmn++){
+	@Seq33[$lmn] = substr($Rawseq1[$lmn],0,(length($Rawseq1[$lmn])/3));     
+	@output_BINOM[$lmn].= &Type_I($Rawseq1[$lmn]).",".&Type_II($Rawseq1[$lmn]).",".&Type_III($Rawseq1[$lmn]).",";
+	$output_BINOM_DE.= &Type_I($Seq33[$lmn]).",".&Type_II($Seq33[$lmn]).",".&Type_III($Seq33[$lmn]).",X\n";
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Amino ACID Feature
+@alpha = qw(A C D E F G H I K L M N P Q R S T V W Y);
+for($i=1;$i<@Rawseq1;$i++){
+     @Rawseq1[$i]=~s/\s//g;
+         for($j = 0;$j<@alpha;$j++){
+               $temp= (@Rawseq1[$i]=~s/$alpha[$j]/$alpha[$j]/g);
+               $temp= ($temp/length(@Rawseq1[$i]))*100;
+                        # $temp = sprintf "%.2f",$temp;
+                                   @vector[$i].=$temp.",";
+
+          }
+
+}
+
+
+for($i=1;$i<@Rawseq1;$i++){
+     $Tempking[$i]=$output_BINOM[$i].@vector[$i].&CLASS_PARSE_CTD(@Rawseq1[$i]);
+#     $Allking.=$Tempking[$i];
+     @Mking = split(',',$Tempking[$i]);
+     $king.=$Mking[1].",".$Mking[9].",".$Mking[11].",".$Mking[13].",".$Mking[21].",".$Mking[34].",".$Mking[35].",".$Mking[47].",".$Mking[53].",".$Mking[54].",".$Mking[61].",".$Mking[69].",".$Mking[71].",".$Mking[74].",".$Mking[85].",".$Mking[90].",".$Mking[92].",".$Mking[95].",".$Mking[96].",".$Mking[97].",".$Mking[113].",".$Mking[118].",".$Mking[126].",".$Mking[127].",".$Mking[130].",".$Mking[140].",".$Mking[141].",".$Mking[155].",".$Mking[156].",".$Mking[158].",".$Mking[159].",".$Mking[162].",".$Mking[182].",".$Mking[184].",".$Mking[185].",".$Mking[187].",".$Mking[188].",".$Mking[190].",".$Mking[193].",".$Mking[202].",".$Mking[215].",".$Mking[217].",".$Mking[220].",".$Mking[227];
+     $CMking.=$Mking[9].",".$Mking[17].",".$Mking[35].",".$Mking[54].",".$Mking[56].",".$Mking[66].",".$Mking[73].",".$Mking[75].",".$Mking[88].",".$Mking[89].",".$Mking[95].",".$Mking[97].",".$Mking[113].",".$Mking[126].",".$Mking[129].",".$Mking[137].",".$Mking[155].",".$Mking[156].",".$Mking[166].",".$Mking[167].",".$Mking[182].",".$Mking[185].",".$Mking[186].",".$Mking[188].",".$Mking[198].",".$Mking[202].",".$Mking[205].",".$Mking[215].",".$Mking[217].",".$Mking[219].",".$Mking[227];
+
+}
+
+
+####################Vector Transform
+$File_origin_CM = '/var/www/html/pcmpred/temp/'.int rand(10000);
+$File_origin_CM.='CM.arff';
+$File_origin_XO = '/var/www/html/pcmpred/temp/'. int rand(10000);
+$File_origin_XO.='XO.arff';
+$File_origin_DE = '/var/www/html/pcmpred/temp/'. int rand(10000);
+$File_origin_DE.='DE.arff';
+
+&TestArff("C","M",$CMking,$File_origin_CM,"31");
+&TestArff("X","O",$king,$File_origin_XO,"44");
+&TestArff("D","E",$output_BINOM_DE,$File_origin_DE,"60");
+
+####################### PREDICTION#############33
+#Global Compartment Variables
+my ($O_Loc_Score, $P_Loc_Score, $M_Loc_Score) = 0;
+##
+
+@R2 = &ML_Test("\/var\/www\/cgi-bin\/pcmpred\/CM.model",$File_origin_CM,'CMres');
+@R1 = &ML_Test("\/var\/www\/cgi-bin\/pcmpred\/XO.model",$File_origin_XO,'XOres');
+@R3 = &ML_Test("\/var\/www\/cgi-bin\/pcmpred\/DE.model",$File_origin_DE,'DEres');
+
+for($i=0;$i<5;$i++){
+     shift(@R1);
+     shift(@R2);
+     shift(@R3);
+}
+
+###########3
+
+
+#####33
+$Out = "<HTML><BODY><script type='text/javascript'>function showPopup(url) {newwindow=window.open(url,'name','height=390,width=850,top=200,left=300,resizable,scrollbars=yes');if (window.focus) {newwindow.focus()}}</script><pre><table border='1'><tr><td><b>S.No</td><td><b>Query</td><td><b>Others</td><td><b>cTP</td><td><b>mTP</td><td><b>Predicted Location</td><td>Dual Target<br>(Score)</td><td>Phosphorylation Site</td></b></tr>";
+for($i=0;$i<@R1;$i++){
+@RR1 = split(':',$R1[$i]);
+
+      if(substr($RR1[2],0,1) eq "X"){
+	  @RR3 = split(':',$R3[$i]);	
+          @RR2 = split(':',$R2[$i]);
+           if(substr($RR2[2],0,1) eq "C"){
+                $P_Loc_Score = substr($RR2[2],1,8);
+                $P_Loc_Score=~s/\+//g;
+           }elsif (substr($RR2[2],0,1) eq "M"){
+                $M_Loc_Score = substr($RR2[2],1,8);
+                $M_Loc_Score=~s/\+//g;
+
+           }
+	   $DualRes = substr($RR3[2],0,1);
+	   $Dual_Score = substr($RR3[2],1,8);	
+	   $Dual_Score=~s/\+//g;	
+	   if($DualRes eq "E"){
+		$DualRes = "N";
+		$Dual_Score = (1-$Dual_Score);
+		
+	   }elsif($DualRes eq "D"){
+	 	$DualRes = "Y";
+	   }
+	   $Pospo = "<a href='/cgi-bin/pcmpred/motif.cgi?".$Rawseq1[$i+1]."' onClick='showPopup(this.href);return(false);'>P</td>";	
+      }else{
+            $O_Loc_Score = substr($RR1[2],1,8);
+            $O_Loc_Score=~s/\+//g;
+	    $Dual_Score = "-";
+	    $DualRes = "-";	
+	    $Pospo = "-";	
+      }
+ ####FUZZY
+
+#BLAST SEARCH OUT
+if($BOP==1){       
+	$BLAST_OUT = &SIM_VOTE(@Rawseq1[$i+1]);
+
+	@Drum = split('\n',$BLAST_OUT);
+	$P_Loc_Score+=@Drum[0];
+	$M_Loc_Score+=@Drum[1];
+	$O_Loc_Score+=@Drum[2];
+
+
+     $O_Loc_Score = $O_Loc_Score/2;
+     $P_Loc_Score = $P_Loc_Score/2;
+     $M_Loc_Score = $M_Loc_Score/2;
+
+}else{
+     $O_Loc_Score = $O_Loc_Score/1;
+     $P_Loc_Score = $P_Loc_Score/1;
+     $M_Loc_Score = $M_Loc_Score/1;
+}
+
+     if(($P_Loc_Score >= $O_Loc_Score) && ($P_Loc_Score >= $M_Loc_Score)){
+          $Final_Result_Out = "Chloroplast";
+     }elsif(($M_Loc_Score >= $O_Loc_Score) && ($M_Loc_Score >= $P_Loc_Score)){
+          $Final_Result_Out = "Mitochondrion";
+     }elsif(($O_Loc_Score >= $M_Loc_Score) && ($O_Loc_Score >= $P_Loc_Score)){
+          $Final_Result_Out = "Other";
+     }
+
+$Out.= "<tr><td>".($i+1)."</td><td>".@FASTA_Header[$i+1]."</td><td>".$O_Loc_Score."</td><td>".$P_Loc_Score."</td><td>".$M_Loc_Score."</td><td>".$Final_Result_Out."</td><td>".$Dual_Score."</td><td>".$Pospo.'</tr>';
+#
+ @RR1 = ();
+ @RR2 = ();
+ ($O_Loc_Score, $P_Loc_Score, $M_Loc_Score) = 0;
+}
+$Out.="</table></pre></html>";
+#&Vec_save("result.htm",$Out);
+print $Out;
+}
+unlink($File_origin_CM);
+unlink($File_origin_XO); 
+unlink($File_origin_DE);
+####################33
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CTD
+
+###################FUNCTIONS######################################
+################################################################
+##################         #############         ############
+sub Type_I{
+    my($param_one)=@_;
+
+    $param_one = uc $param_one;
+    @SLC = qw(A C D E F G H I K L M N P Q R S T V W Y);
+    $Length_Prt = length($param_one);
+    my $i=0;
+#    Measure Calculation
+    foreach(@SLC){
+             if($param_one =~m/$SLC[$i]/g){
+                 $nX[$i] = ($param_one =~s/$SLC[$i]/$SLC[$i]/g);
+             }else{
+                 $nX[$i] = 0;
+
+             }
+             $i++;
+    }
+    #Measure Calculation
+    for($i=0;$i<$Length_Prt;$i++){
+         $pX[$i] = $nX[$i]/$Length_Prt;
+         #$pX[$i] = sprintf "%.2f",$pX[$i];
+    }
+    #Theoretical Mean Calculation
+    @Res_Codon_Occ = qw(4 2 2 2 2 4 2 3 2 6 1 2 4 2 6 6 4 4 1 2);
+    my $j=0;
+    foreach(@Res_Codon_Occ){
+        $piX[$j] = $Res_Codon_Occ[$j]/61;
+        #$piX[$j] = sprintf "%.2f",$piX[$j];
+        $j++;
+    }
+    #Theoretical variance Calculation
+    for($i=0;$i<20;$i++){
+              $Theo_Variance[$i] = ($piX[$i]*(1-$piX[$i]))/$Length_Prt;
+              #$Theo_Variance[$i] = sprintf "%.2f",$Theo_Variance[$i];
+    }
+    #Type I Parameter Calculation
+    for($i=0;$i<20;$i++){
+        eval{($pX[$i] - $piX[$i])/(sqrt($Theo_Variance[$i]));};
+        if($@){
+              $Type_I_Value[$i] = 0.00;
+        }else{
+              $Type_I_Value[$i] = ($pX[$i] - $piX[$i])/(sqrt($Theo_Variance[$i]));
+              #$Type_I_Value[$i] = sprintf "%.2f", $Type_I_Value[$i];
+        }
+
+    }
+    $vector1 = join(",",@Type_I_Value);
+    return $vector1;
+}
+############################################################################
+sub TRACE_POS{
+    my($STRING,$CHAR)= @_;
+    my $ixyz=0;
+
+    my $sum=0;
+    do{
+       $Holder[$ixyz] = index($STRING,$CHAR,$Crawler)+1;
+       $sum+=$Holder[$ixyz];
+       $Crawler = $Holder[$ixyz];
+       $ixyz++;
+       $ex = index($STRING,$CHAR,$Crawler);
+    }until ($ex == -1);
+
+    return $sum;
+ }
+###########################################################################
+sub Type_II{
+    my($param_two) = @_;
+
+    $param_two = uc $param_two;
+    @SLC = qw(A C D E F G H I K L M N P Q R S T V W Y);
+    $Length_Prt = length($param_two);
+    my $i=0;
+    #Measure Calculation
+    foreach(@SLC){
+             if($param_two =~m/$SLC[$i]/g){
+                 $nX[$i] = ($param_two =~s/$SLC[$i]/$SLC[$i]/g);
+             }else{
+                 $nX[$i] = 0;
+             }
+             $i++;
+    }
+    for($i=0;$i<20;$i++){
+        if($nX[$i] == 0){
+              $M_m[$i] = 0.0;
+              $T_v[$i]= 0.0;
+              $P_V[$i] = 0.0;
+        }else{
+              $M_m[$i]= &TRACE_POS($param_two,$SLC[$i])/$nX[$i];
+              $T_v[$i] = (($Length_Prt+1)*($Length_Prt-$nX[$i])/(12*$nX[$i]));    #Theoritical Variance Calculation
+              $T_m[$i] = ($Length_Prt+1)/2; #Theoritical Mean
+              $P_V[$i] = ($M_m[$i]-$T_m[$i])/(sqrt($T_v[$i]));    #Parameter Value Calculation
+        }
+    }
+    $vector2 = join(",",@P_V);
+    @SLC=();
+    @nX=();
+    @M_m=();
+    @T_v=();
+    @P_V=();
+    return $vector2;
+}
+###################################
+sub COMPLEX_POS{
+    my($STRING,$CHAR)= @_;
+    my $i=0;
+    my $sum=0;
+    my $Crawler=0;
+    my $ex;
+    my $k;
+    do{
+       $HolderX[$i] = index($STRING,$CHAR,$Crawler)+1;
+       $sum+=$HolderX[$i];
+       $Crawler = $HolderX[$i];
+       $i++;
+       $ex = index($STRING,$CHAR,$Crawler);
+    }until ($ex == -1);
+    $ret=0;
+    for($k=0;$k<@HolderX;$k++){
+             $elite = ($STRING=~s/$CHAR/$CHAR/g);
+             if($elite!= 0){
+                 $ret+= ($HolderX[$k]- (($sum/$elite)))**2;
+             }else{
+                 $ret+=0;
+             }
+    }
+        @HolderX=();
+    return $ret;
+ }
+ ###################################
+sub Type_III{
+    my($param_three) = @_;
+
+
+    @SLC = qw(A C D E F G H I K L M N P Q R S T V W Y);
+    $Length_Prt = length($param_three);
+    my $i=0;
+    foreach(@SLC){
+             if($param_three =~m/$SLC[$i]/g){
+                 $nX[$i] = ($param_three =~s/$SLC[$i]/$SLC[$i]/g);
+             }else{
+                 $nX[$i] = 0;
+             }
+             $i++;
+    }
+    $const1 = ($Length_Prt-1)/$Length_Prt;
+    for($i=0;$i<20;$i++){
+         if($nX[$i] == 1){
+             $const2 = 0.0;
+         }else{
+             $const2 = 1/($nX[$i]-1);
+         }
+
+         $const3 = &COMPLEX_POS($param_three,$SLC[$i]);
+         $Me_m[$i] = $const1*$const2*$const3;#Measure 3
+         $Te_m[$i] = (($Length_Prt**2)-1)/12;
+
+         if($nX[$i]==0){
+            $Te_v[$i] = 0;
+         }else{
+            if($nX[$i] == 1){
+                $Te_v[$i] = 0.0;
+            }else{
+                $Te_v[$i] = (($Length_Prt-$nX[$i])*(($Length_Prt-1)**2)*($Length_Prt+1)*((2*$nX[$i]*$Length_Prt)+(3*$Length_Prt)+(3*$nX[$i])+3))/(360*$nX[$i]*($nX[$i]-1)*$Length_Prt);
+            }
+         }
+         if($Te_v[$i]!=0){
+             $F_V[$i] = ($Me_m[$i]-$Te_m[$i])/(sqrt($Te_v[$i]));    #Parameter Value Calculation
+         }else{
+             $F_V[$i]= 0.0;
+         }
+#         print $F_V[$i]."\n";
+    }
+    $vector3 = join(',',@F_V);
+    @SLC=();
+    @nX=();
+    @Te_v=();
+    @F_V=();
+    return $vector3;
+}
+sub Dipep_Calc{
+     my ($seqin)= @_;
+     @MPEP = qw(A C D E F G H I K L M N P Q R S T V W Y);
+     $out="";
+
+     for($i=0;$i<20;$i++){
+          for($j=0;$j<20;$j++){
+                $tra = $MPEP[$i].$MPEP[$j];
+                $dipep = ($seqin=~s/$tra/$tra/g);
+                $dipep = ($dipep/(length($seqin)-1))*100;
+                if(!$dipep){
+                   $out.=",0";
+                }else{
+                   $out.=",".$dipep;
+                }
+          }
+     }
+     $out =~ s/,//;
+     return $out;
+}
+
+############################ CTD CALCULATION FUNCTIONS
+sub CLASS_PARSE_CTD
+{
+my($seq_param)=@_;
+
+     $seq_param = uc $seq_param;
+     #HYDRO CLASS SEQUENCE CALC
+     $HCLASS_Seq = $seq_param;
+     $HCLASS_Seq =~ s/[RKEDQN]/1/g;
+     $HCLASS_Seq =~ s/[GASTPHY]/2/g;
+     $HCLASS_Seq =~ s/[CLVIMFW]/3/g;
+     #Vander CLASS SEQUENCE CALC
+     $VwCLASS_Seq = $seq_param;
+     $VwCLASS_Seq =~ s/[GASTPDC]/1/g;
+     $VwCLASS_Seq =~ s/[NVEQIL]/2/g;
+     $VwCLASS_Seq =~ s/[MHKFRYW]/3/g;
+     #Polariz CLASS SEQUENCE CALC
+     $PoCLASS_Seq = $seq_param;
+     $PoCLASS_Seq =~ s/[LIFWCMVY]/1/g;
+     $PoCLASS_Seq =~ s/[PATGS]/2/g;
+     $PoCLASS_Seq =~ s/[HQRKNED]/3/g;
+     #Pz CLASS SEQUENCE CALC
+     $PzCLASS_Seq = $seq_param;
+     $PzCLASS_Seq =~ s/[GASDT]/1/g;
+     $PzCLASS_Seq =~ s/[CPNVEQIL]/2/g;
+     $PzCLASS_Seq =~ s/[KMHFRYW]/3/g;
+     #Charge CLASS SEQUENCE CALC
+     $CgCLASS_Seq = $seq_param;
+     $CgCLASS_Seq =~ s/[KR]/1/g;
+     $CgCLASS_Seq =~ s/[ANCQGHILMFPSTWYV]/2/g;
+     $CgCLASS_Seq =~ s/[DE]/3/g;
+     #Ss CLASS SEQUENCE CALC
+     $SsCLASS_Seq = $seq_param;
+     $SsCLASS_Seq =~ s/[EALMQKRH]/1/g;
+     $SsCLASS_Seq =~ s/[VIYCWFT]/2/g;
+     $SsCLASS_Seq =~ s/[GNPSD]/3/g;
+     #Sv CLASS SEQUENCE CALC
+     $SvCLASS_Seq = $seq_param;
+     $SvCLASS_Seq =~ s/[ALFCGIVW]/1/g;
+     $SvCLASS_Seq =~ s/[RKQEND]/2/g;
+     $SvCLASS_Seq =~ s/[MPSTHY]/3/g;
+
+     ##########################################
+     #Composition Calulation
+     $H1_Class_Comp = (&Composition_Calc($HCLASS_Seq,'1')/length($seq_param))*100;
+     $H2_Class_Comp = (&Composition_Calc($HCLASS_Seq,'2')/length($seq_param))*100;
+     $H3_Class_Comp = (&Composition_Calc($HCLASS_Seq,'3')/length($seq_param))*100;
+
+     $Vw1_Class_Comp = (&Composition_Calc($VwCLASS_Seq,'1')/length($seq_param))*100;
+     $Vw2_Class_Comp = (&Composition_Calc($VwCLASS_Seq,'2')/length($seq_param))*100;
+     $Vw3_Class_Comp = (&Composition_Calc($VwCLASS_Seq,'3')/length($seq_param))*100;
+
+     $Po1_Class_Comp = (&Composition_Calc($PoCLASS_Seq,'1')/length($seq_param))*100;
+     $Po2_Class_Comp = (&Composition_Calc($PoCLASS_Seq,'2')/length($seq_param))*100;
+     $Po3_Class_Comp = (&Composition_Calc($PoCLASS_Seq,'3')/length($seq_param))*100;
+
+     $Pz1_Class_Comp = (&Composition_Calc($PzCLASS_Seq,'1')/length($seq_param))*100;
+     $Pz2_Class_Comp = (&Composition_Calc($PzCLASS_Seq,'2')/length($seq_param))*100;
+     $Pz3_Class_Comp = (&Composition_Calc($PzCLASS_Seq,'3')/length($seq_param))*100;
+
+     $Cg1_Class_Comp = (&Composition_Calc($CgCLASS_Seq,'1')/length($seq_param))*100;
+     $Cg2_Class_Comp = (&Composition_Calc($CgCLASS_Seq,'2')/length($seq_param))*100;
+     $Cg3_Class_Comp = (&Composition_Calc($CgCLASS_Seq,'3')/length($seq_param))*100;
+
+     $Ss1_Class_Comp = (&Composition_Calc($SsCLASS_Seq,'1')/length($seq_param))*100;
+     $Ss2_Class_Comp = (&Composition_Calc($SsCLASS_Seq,'2')/length($seq_param))*100;
+     $Ss3_Class_Comp = (&Composition_Calc($SsCLASS_Seq,'3')/length($seq_param))*100;
+
+     $Sv1_Class_Comp = (&Composition_Calc($SvCLASS_Seq,'1')/length($seq_param))*100;
+     $Sv2_Class_Comp = (&Composition_Calc($SvCLASS_Seq,'2')/length($seq_param))*100;
+     $Sv3_Class_Comp = (&Composition_Calc($SvCLASS_Seq,'3')/length($seq_param))*100;
+############################################################################################
+#Transition Calculation
+     $H1_Class_Trans = ((&Composition_Calc($HCLASS_Seq,'12')+&Composition_Calc($HCLASS_Seq,'21'))/length($seq_param))*100;
+     $H2_Class_Trans = ((&Composition_Calc($HCLASS_Seq,'13')+&Composition_Calc($HCLASS_Seq,'31'))/length($seq_param))*100;
+     $H3_Class_Trans = ((&Composition_Calc($HCLASS_Seq,'23')+&Composition_Calc($HCLASS_Seq,'32'))/length($seq_param))*100;
+
+     $Vw1_Class_Trans = ((&Composition_Calc($VwCLASS_Seq,'12')+&Composition_Calc($VwCLASS_Seq,'21'))/length($seq_param))*100;
+     $Vw2_Class_Trans = ((&Composition_Calc($VwCLASS_Seq,'13')+&Composition_Calc($VwCLASS_Seq,'31'))/length($seq_param))*100;
+     $Vw3_Class_Trans = ((&Composition_Calc($VwCLASS_Seq,'23')+&Composition_Calc($VwCLASS_Seq,'32'))/length($seq_param))*100;
+
+     $Po1_Class_Trans = ((&Composition_Calc($PoCLASS_Seq,'12')+&Composition_Calc($PoCLASS_Seq,'21'))/length($seq_param))*100;
+     $Po2_Class_Trans = ((&Composition_Calc($PoCLASS_Seq,'13')+&Composition_Calc($PoCLASS_Seq,'31'))/length($seq_param))*100;
+     $Po3_Class_Trans = ((&Composition_Calc($PoCLASS_Seq,'23')+&Composition_Calc($PoCLASS_Seq,'32'))/length($seq_param))*100;
+
+     $Pz1_Class_Trans = ((&Composition_Calc($PzCLASS_Seq,'12')+&Composition_Calc($PzCLASS_Seq,'21'))/length($seq_param))*100;
+     $Pz2_Class_Trans = ((&Composition_Calc($PzCLASS_Seq,'13')+&Composition_Calc($PzCLASS_Seq,'31'))/length($seq_param))*100;
+     $Pz3_Class_Trans = ((&Composition_Calc($PzCLASS_Seq,'23')+&Composition_Calc($PzCLASS_Seq,'32'))/length($seq_param))*100;
+
+     $Cg1_Class_Trans = ((&Composition_Calc($CgCLASS_Seq,'12')+&Composition_Calc($CgCLASS_Seq,'21'))/length($seq_param))*100;
+     $Cg2_Class_Trans = ((&Composition_Calc($CgCLASS_Seq,'13')+&Composition_Calc($CgCLASS_Seq,'31'))/length($seq_param))*100;
+     $Cg3_Class_Trans = ((&Composition_Calc($CgCLASS_Seq,'23')+&Composition_Calc($CgCLASS_Seq,'32'))/length($seq_param))*100;
+
+     $Ss1_Class_Trans = ((&Composition_Calc($SsCLASS_Seq,'12')+&Composition_Calc($SsCLASS_Seq,'21'))/length($seq_param))*100;
+     $Ss2_Class_Trans = ((&Composition_Calc($SsCLASS_Seq,'13')+&Composition_Calc($SsCLASS_Seq,'31'))/length($seq_param))*100;
+     $Ss3_Class_Trans = ((&Composition_Calc($SsCLASS_Seq,'23')+&Composition_Calc($SsCLASS_Seq,'32'))/length($seq_param))*100;
+
+     $Sv1_Class_Trans = ((&Composition_Calc($SvCLASS_Seq,'12')+&Composition_Calc($SvCLASS_Seq,'21'))/length($seq_param))*100;
+     $Sv2_Class_Trans = ((&Composition_Calc($SvCLASS_Seq,'13')+&Composition_Calc($SvCLASS_Seq,'31'))/length($seq_param))*100;
+     $Sv3_Class_Trans = ((&Composition_Calc($SvCLASS_Seq,'23')+&Composition_Calc($SvCLASS_Seq,'32'))/length($seq_param))*100;
+#############################################################################################################
+#Distribution calculation
+
+################HYDRO DIST
+$HD1_1O = (&First_Occ_Dist($HCLASS_Seq,'1')/length($HCLASS_Seq))*100;
+$HD1_2O = (&First_Occ_Dist($HCLASS_Seq,'2')/length($HCLASS_Seq))*100;
+$HD1_3O = (&First_Occ_Dist($HCLASS_Seq,'3')/length($HCLASS_Seq))*100;
+
+$HD25_1O = (&Count_Dist_Occur($HCLASS_Seq,'1',int((25*&Composition_Calc($HCLASS_Seq,'1'))/100))/length($HCLASS_Seq))*100;
+$HD25_2O = (&Count_Dist_Occur($HCLASS_Seq,'2',int((25*&Composition_Calc($HCLASS_Seq,'2'))/100))/length($HCLASS_Seq))*100;
+$HD25_3O = (&Count_Dist_Occur($HCLASS_Seq,'3',int((25*&Composition_Calc($HCLASS_Seq,'3'))/100))/length($HCLASS_Seq))*100;
+
+$HD50_1O = (&Count_Dist_Occur($HCLASS_Seq,'1',int((50*&Composition_Calc($HCLASS_Seq,'1'))/100))/length($HCLASS_Seq))*100;
+$HD50_2O = (&Count_Dist_Occur($HCLASS_Seq,'2',int((50*&Composition_Calc($HCLASS_Seq,'2'))/100))/length($HCLASS_Seq))*100;
+$HD50_3O = (&Count_Dist_Occur($HCLASS_Seq,'3',int((50*&Composition_Calc($HCLASS_Seq,'3'))/100))/length($HCLASS_Seq))*100;
+
+$HD75_1O = (&Count_Dist_Occur($HCLASS_Seq,'1',int((75*&Composition_Calc($HCLASS_Seq,'1'))/100))/length($HCLASS_Seq))*100;
+$HD75_2O = (&Count_Dist_Occur($HCLASS_Seq,'2',int((75*&Composition_Calc($HCLASS_Seq,'2'))/100))/length($HCLASS_Seq))*100;
+$HD75_3O = (&Count_Dist_Occur($HCLASS_Seq,'3',int((75*&Composition_Calc($HCLASS_Seq,'3'))/100))/length($HCLASS_Seq))*100;
+
+$HD100_1O = (&Count_Dist_Occur($HCLASS_Seq,'1',int((100*&Composition_Calc($HCLASS_Seq,'1'))/100))/length($HCLASS_Seq))*100;
+$HD100_2O = (&Count_Dist_Occur($HCLASS_Seq,'2',int((100*&Composition_Calc($HCLASS_Seq,'2'))/100))/length($HCLASS_Seq))*100;
+$HD100_3O = (&Count_Dist_Occur($HCLASS_Seq,'3',int((100*&Composition_Calc($HCLASS_Seq,'3'))/100))/length($HCLASS_Seq))*100;
+
+#########################Vw DIST
+$VD1_1O = (&First_Occ_Dist($VwCLASS_Seq,'1')/length($VwCLASS_Seq))*100;
+$VD1_2O = (&First_Occ_Dist($VwCLASS_Seq,'2')/length($VwCLASS_Seq))*100;
+$VD1_3O = (&First_Occ_Dist($VwCLASS_Seq,'3')/length($VwCLASS_Seq))*100;
+
+$VD25_1O = (&Count_Dist_Occur($VwCLASS_Seq,'1',int((25*&Composition_Calc($VwCLASS_Seq,'1'))/100))/length($VwCLASS_Seq))*100;
+$VD25_2O = (&Count_Dist_Occur($VwCLASS_Seq,'2',int((25*&Composition_Calc($VwCLASS_Seq,'2'))/100))/length($VwCLASS_Seq))*100;
+$VD25_3O = (&Count_Dist_Occur($VwCLASS_Seq,'3',int((25*&Composition_Calc($VwCLASS_Seq,'3'))/100))/length($VwCLASS_Seq))*100;
+
+$VD50_1O = (&Count_Dist_Occur($VwCLASS_Seq,'1',int((50*&Composition_Calc($VwCLASS_Seq,'1'))/100))/length($VwCLASS_Seq))*100;
+$VD50_2O = (&Count_Dist_Occur($VwCLASS_Seq,'2',int((50*&Composition_Calc($VwCLASS_Seq,'2'))/100))/length($VwCLASS_Seq))*100;
+$VD50_3O = (&Count_Dist_Occur($VwCLASS_Seq,'3',int((50*&Composition_Calc($VwCLASS_Seq,'3'))/100))/length($VwCLASS_Seq))*100;
+
+$VD75_1O = (&Count_Dist_Occur($VwCLASS_Seq,'1',int((75*&Composition_Calc($VwCLASS_Seq,'1'))/100))/length($VwCLASS_Seq))*100;
+$VD75_2O = (&Count_Dist_Occur($VwCLASS_Seq,'2',int((75*&Composition_Calc($VwCLASS_Seq,'2'))/100))/length($VwCLASS_Seq))*100;
+$VD75_3O = (&Count_Dist_Occur($VwCLASS_Seq,'3',int((75*&Composition_Calc($VwCLASS_Seq,'3'))/100))/length($VwCLASS_Seq))*100;
+
+$VD100_1O = (&Count_Dist_Occur($VwCLASS_Seq,'1',int((100*&Composition_Calc($VwCLASS_Seq,'1'))/100))/length($VwCLASS_Seq))*100;
+$VD100_2O = (&Count_Dist_Occur($VwCLASS_Seq,'2',int((100*&Composition_Calc($VwCLASS_Seq,'2'))/100))/length($VwCLASS_Seq))*100;
+$VD100_3O = (&Count_Dist_Occur($VwCLASS_Seq,'3',int((100*&Composition_Calc($VwCLASS_Seq,'3'))/100))/length($VwCLASS_Seq))*100;
+
+#########################Po DIST
+$Po1_1O = (&First_Occ_Dist($PoCLASS_Seq,'1')/length($PoCLASS_Seq))*100;
+$Po1_2O = (&First_Occ_Dist($PoCLASS_Seq,'2')/length($PoCLASS_Seq))*100;
+$Po1_3O = (&First_Occ_Dist($PoCLASS_Seq,'3')/length($PoCLASS_Seq))*100;
+
+$PoD25_1O = (&Count_Dist_Occur($PoCLASS_Seq,'1',int((25*&Composition_Calc($PoCLASS_Seq,'1'))/100))/length($PoCLASS_Seq))*100;
+$PoD25_2O = (&Count_Dist_Occur($PoCLASS_Seq,'2',int((25*&Composition_Calc($PoCLASS_Seq,'2'))/100))/length($PoCLASS_Seq))*100;
+$PoD25_3O = (&Count_Dist_Occur($PoCLASS_Seq,'3',int((25*&Composition_Calc($PoCLASS_Seq,'3'))/100))/length($PoCLASS_Seq))*100;
+
+$PoD50_1O = (&Count_Dist_Occur($PoCLASS_Seq,'1',int((50*&Composition_Calc($PoCLASS_Seq,'1'))/100))/length($PoCLASS_Seq))*100;
+$PoD50_2O = (&Count_Dist_Occur($PoCLASS_Seq,'2',int((50*&Composition_Calc($PoCLASS_Seq,'2'))/100))/length($PoCLASS_Seq))*100;
+$PoD50_3O = (&Count_Dist_Occur($PoCLASS_Seq,'3',int((50*&Composition_Calc($PoCLASS_Seq,'3'))/100))/length($PoCLASS_Seq))*100;
+
+$PoD75_1O = (&Count_Dist_Occur($PoCLASS_Seq,'1',int((75*&Composition_Calc($PoCLASS_Seq,'1'))/100))/length($PoCLASS_Seq))*100;
+$PoD75_2O = (&Count_Dist_Occur($PoCLASS_Seq,'2',int((75*&Composition_Calc($PoCLASS_Seq,'2'))/100))/length($PoCLASS_Seq))*100;
+$PoD75_3O = (&Count_Dist_Occur($PoCLASS_Seq,'3',int((75*&Composition_Calc($PoCLASS_Seq,'3'))/100))/length($PoCLASS_Seq))*100;
+
+$PoD100_1O = (&Count_Dist_Occur($PoCLASS_Seq,'1',int((100*&Composition_Calc($PoCLASS_Seq,'1'))/100))/length($PoCLASS_Seq))*100;
+$PoD100_2O = (&Count_Dist_Occur($PoCLASS_Seq,'2',int((100*&Composition_Calc($PoCLASS_Seq,'2'))/100))/length($PoCLASS_Seq))*100;
+$PoD100_3O = (&Count_Dist_Occur($PoCLASS_Seq,'3',int((100*&Composition_Calc($PoCLASS_Seq,'3'))/100))/length($PoCLASS_Seq))*100;
+
+#########################Pz DIST
+$Pz1_1O = (&First_Occ_Dist($PzCLASS_Seq,'1')/length($PzCLASS_Seq))*100;
+$Pz1_2O = (&First_Occ_Dist($PzCLASS_Seq,'2')/length($PzCLASS_Seq))*100;
+$Pz1_3O = (&First_Occ_Dist($PzCLASS_Seq,'3')/length($PzCLASS_Seq))*100;
+
+$PzD25_1O = (&Count_Dist_Occur($PzCLASS_Seq,'1',int((25*&Composition_Calc($PzCLASS_Seq,'1'))/100))/length($PzCLASS_Seq))*100;
+$PzD25_2O = (&Count_Dist_Occur($PzCLASS_Seq,'2',int((25*&Composition_Calc($PzCLASS_Seq,'2'))/100))/length($PzCLASS_Seq))*100;
+$PzD25_3O = (&Count_Dist_Occur($PzCLASS_Seq,'3',int((25*&Composition_Calc($PzCLASS_Seq,'3'))/100))/length($PzCLASS_Seq))*100;
+
+$PzD50_1O = (&Count_Dist_Occur($PzCLASS_Seq,'1',int((50*&Composition_Calc($PzCLASS_Seq,'1'))/100))/length($PzCLASS_Seq))*100;
+$PzD50_2O = (&Count_Dist_Occur($PzCLASS_Seq,'2',int((50*&Composition_Calc($PzCLASS_Seq,'2'))/100))/length($PzCLASS_Seq))*100;
+$PzD50_3O = (&Count_Dist_Occur($PzCLASS_Seq,'3',int((50*&Composition_Calc($PzCLASS_Seq,'3'))/100))/length($PzCLASS_Seq))*100;
+
+$PzD75_1O = (&Count_Dist_Occur($PzCLASS_Seq,'1',int((75*&Composition_Calc($PzCLASS_Seq,'1'))/100))/length($PzCLASS_Seq))*100;
+$PzD75_2O = (&Count_Dist_Occur($PzCLASS_Seq,'2',int((75*&Composition_Calc($PzCLASS_Seq,'2'))/100))/length($PzCLASS_Seq))*100;
+$PzD75_3O = (&Count_Dist_Occur($PzCLASS_Seq,'3',int((75*&Composition_Calc($PzCLASS_Seq,'3'))/100))/length($PzCLASS_Seq))*100;
+
+$PzD100_1O = (&Count_Dist_Occur($PzCLASS_Seq,'1',int((100*&Composition_Calc($PzCLASS_Seq,'1'))/100))/length($PzCLASS_Seq))*100;
+$PzD100_2O = (&Count_Dist_Occur($PzCLASS_Seq,'2',int((100*&Composition_Calc($PzCLASS_Seq,'2'))/100))/length($PzCLASS_Seq))*100;
+$PzD100_3O = (&Count_Dist_Occur($PzCLASS_Seq,'3',int((100*&Composition_Calc($PzCLASS_Seq,'3'))/100))/length($PzCLASS_Seq))*100;
+
+######################### Cg DIST
+$Cg1_1O = (&First_Occ_Dist($CgCLASS_Seq,'1')/length($CgCLASS_Seq))*100;
+$Cg1_2O = (&First_Occ_Dist($CgCLASS_Seq,'2')/length($CgCLASS_Seq))*100;
+$Cg1_3O = (&First_Occ_Dist($CgCLASS_Seq,'3')/length($CgCLASS_Seq))*100;
+
+$CgD25_1O = (&Count_Dist_Occur($CgCLASS_Seq,'1',int((25*&Composition_Calc($CgCLASS_Seq,'1'))/100))/length($CgCLASS_Seq))*100;
+$CgD25_2O = (&Count_Dist_Occur($CgCLASS_Seq,'2',int((25*&Composition_Calc($CgCLASS_Seq,'2'))/100))/length($CgCLASS_Seq))*100;
+$CgD25_3O = (&Count_Dist_Occur($CgCLASS_Seq,'3',int((25*&Composition_Calc($CgCLASS_Seq,'3'))/100))/length($CgCLASS_Seq))*100;
+
+$CgD50_1O = (&Count_Dist_Occur($CgCLASS_Seq,'1',int((50*&Composition_Calc($CgCLASS_Seq,'1'))/100))/length($CgCLASS_Seq))*100;
+$CgD50_2O = (&Count_Dist_Occur($CgCLASS_Seq,'2',int((50*&Composition_Calc($CgCLASS_Seq,'2'))/100))/length($CgCLASS_Seq))*100;
+$CgD50_3O = (&Count_Dist_Occur($CgCLASS_Seq,'3',int((50*&Composition_Calc($CgCLASS_Seq,'3'))/100))/length($CgCLASS_Seq))*100;
+
+$CgD75_1O = (&Count_Dist_Occur($CgCLASS_Seq,'1',int((75*&Composition_Calc($CgCLASS_Seq,'1'))/100))/length($CgCLASS_Seq))*100;
+$CgD75_2O = (&Count_Dist_Occur($CgCLASS_Seq,'2',int((75*&Composition_Calc($CgCLASS_Seq,'2'))/100))/length($CgCLASS_Seq))*100;
+$CgD75_3O = (&Count_Dist_Occur($CgCLASS_Seq,'3',int((75*&Composition_Calc($CgCLASS_Seq,'3'))/100))/length($CgCLASS_Seq))*100;
+
+$CgD100_1O = (&Count_Dist_Occur($CgCLASS_Seq,'1',int((100*&Composition_Calc($CgCLASS_Seq,'1'))/100))/length($CgCLASS_Seq))*100;
+$CgD100_2O = (&Count_Dist_Occur($CgCLASS_Seq,'2',int((100*&Composition_Calc($CgCLASS_Seq,'2'))/100))/length($CgCLASS_Seq))*100;
+$CgD100_3O = (&Count_Dist_Occur($CgCLASS_Seq,'3',int((100*&Composition_Calc($CgCLASS_Seq,'3'))/100))/length($CgCLASS_Seq))*100;
+
+######################### Ss DIST
+$Ss1_1O = (&First_Occ_Dist($SsCLASS_Seq,'1')/length($SsCLASS_Seq))*100;
+$Ss1_2O = (&First_Occ_Dist($SsCLASS_Seq,'2')/length($SsCLASS_Seq))*100;
+$Ss1_3O = (&First_Occ_Dist($SsCLASS_Seq,'3')/length($SsCLASS_Seq))*100;
+
+$SsD25_1O = (&Count_Dist_Occur($SsCLASS_Seq,'1',int((25*&Composition_Calc($SsCLASS_Seq,'1'))/100))/length($SsCLASS_Seq))*100;
+$SsD25_2O = (&Count_Dist_Occur($SsCLASS_Seq,'2',int((25*&Composition_Calc($SsCLASS_Seq,'2'))/100))/length($SsCLASS_Seq))*100;
+$SsD25_3O = (&Count_Dist_Occur($SsCLASS_Seq,'3',int((25*&Composition_Calc($SsCLASS_Seq,'3'))/100))/length($SsCLASS_Seq))*100;
+
+$SsD50_1O = (&Count_Dist_Occur($SsCLASS_Seq,'1',int((50*&Composition_Calc($SsCLASS_Seq,'1'))/100))/length($SsCLASS_Seq))*100;
+$SsD50_2O = (&Count_Dist_Occur($SsCLASS_Seq,'2',int((50*&Composition_Calc($SsCLASS_Seq,'2'))/100))/length($SsCLASS_Seq))*100;
+$SsD50_3O = (&Count_Dist_Occur($SsCLASS_Seq,'3',int((50*&Composition_Calc($SsCLASS_Seq,'3'))/100))/length($SsCLASS_Seq))*100;
+
+$SsD75_1O = (&Count_Dist_Occur($SsCLASS_Seq,'1',int((75*&Composition_Calc($SsCLASS_Seq,'1'))/100))/length($SsCLASS_Seq))*100;
+$SsD75_2O = (&Count_Dist_Occur($SsCLASS_Seq,'2',int((75*&Composition_Calc($SsCLASS_Seq,'2'))/100))/length($SsCLASS_Seq))*100;
+$SsD75_3O = (&Count_Dist_Occur($SsCLASS_Seq,'3',int((75*&Composition_Calc($SsCLASS_Seq,'3'))/100))/length($SsCLASS_Seq))*100;
+
+$SsD100_1O = (&Count_Dist_Occur($SsCLASS_Seq,'1',int((100*&Composition_Calc($SsCLASS_Seq,'1'))/100))/length($SsCLASS_Seq))*100;
+$SsD100_2O = (&Count_Dist_Occur($SsCLASS_Seq,'2',int((100*&Composition_Calc($SsCLASS_Seq,'2'))/100))/length($SsCLASS_Seq))*100;
+$SsD100_3O = (&Count_Dist_Occur($SsCLASS_Seq,'3',int((100*&Composition_Calc($SsCLASS_Seq,'3'))/100))/length($SsCLASS_Seq))*100;
+
+######################### Sv DIST
+$Sv1_1O = (&First_Occ_Dist($SvCLASS_Seq,'1')/length($SvCLASS_Seq))*100;
+$Sv1_2O = (&First_Occ_Dist($SvCLASS_Seq,'2')/length($SvCLASS_Seq))*100;
+$Sv1_3O = (&First_Occ_Dist($SvCLASS_Seq,'3')/length($SvCLASS_Seq))*100;
+
+$SvD25_1O = (&Count_Dist_Occur($SvCLASS_Seq,'1',int((25*&Composition_Calc($SvCLASS_Seq,'1'))/100))/length($SvCLASS_Seq))*100;
+$SvD25_2O = (&Count_Dist_Occur($SvCLASS_Seq,'2',int((25*&Composition_Calc($SvCLASS_Seq,'2'))/100))/length($SvCLASS_Seq))*100;
+$SvD25_3O = (&Count_Dist_Occur($SvCLASS_Seq,'3',int((25*&Composition_Calc($SvCLASS_Seq,'3'))/100))/length($SvCLASS_Seq))*100;
+
+$SvD50_1O = (&Count_Dist_Occur($SvCLASS_Seq,'1',int((50*&Composition_Calc($SvCLASS_Seq,'1'))/100))/length($SvCLASS_Seq))*100;
+$SvD50_2O = (&Count_Dist_Occur($SvCLASS_Seq,'2',int((50*&Composition_Calc($SvCLASS_Seq,'2'))/100))/length($SvCLASS_Seq))*100;
+$SvD50_3O = (&Count_Dist_Occur($SvCLASS_Seq,'3',int((50*&Composition_Calc($SvCLASS_Seq,'3'))/100))/length($SvCLASS_Seq))*100;
+
+$SvD75_1O = (&Count_Dist_Occur($SvCLASS_Seq,'1',int((75*&Composition_Calc($SvCLASS_Seq,'1'))/100))/length($SvCLASS_Seq))*100;
+$SvD75_2O = (&Count_Dist_Occur($SvCLASS_Seq,'2',int((75*&Composition_Calc($SvCLASS_Seq,'2'))/100))/length($SvCLASS_Seq))*100;
+$SvD75_3O = (&Count_Dist_Occur($SvCLASS_Seq,'3',int((75*&Composition_Calc($SvCLASS_Seq,'3'))/100))/length($SvCLASS_Seq))*100;
+
+$SvD100_1O = (&Count_Dist_Occur($SvCLASS_Seq,'1',int((100*&Composition_Calc($SvCLASS_Seq,'1'))/100))/length($SvCLASS_Seq))*100;
+$SvD100_2O = (&Count_Dist_Occur($SvCLASS_Seq,'2',int((100*&Composition_Calc($SvCLASS_Seq,'2'))/100))/length($SvCLASS_Seq))*100;
+$SvD100_3O = (&Count_Dist_Occur($SvCLASS_Seq,'3',int((100*&Composition_Calc($SvCLASS_Seq,'3'))/100))/length($SvCLASS_Seq))*100;
+#################RETURN
+
+return "$H1_Class_Comp,$H2_Class_Comp,$H3_Class_Comp,$Vw1_Class_Comp,$Vw2_Class_Comp,$Vw3_Class_Comp,$Po1_Class_Comp,$Po2_Class_Comp,$Po3_Class_Comp,$Pz1_Class_Comp,$Pz2_Class_Comp,$Pz3_Class_Comp,$Cg1_Class_Comp,$Cg2_Class_Comp,$Cg3_Class_Comp,$Ss1_Class_Comp,$Ss2_Class_Comp,$Ss3_Class_Comp,$Sv1_Class_Comp,$Sv2_Class_Comp,$Sv3_Class_Comp,$H1_Class_Trans,$H2_Class_Trans,$H3_Class_Trans,$Vw1_Class_Trans,$Vw2_Class_Trans,$Vw3_Class_Trans,$Po1_Class_Trans,$Po2_Class_Trans,$Po3_Class_Trans,$Pz1_Class_Trans,$Pz2_Class_Trans,$Pz3_Class_Trans,$Cg1_Class_Trans,$Cg2_Class_Trans,$Cg3_Class_Trans,$Ss1_Class_Trans,$Ss2_Class_Trans,$Ss3_Class_Trans,$Sv1_Class_Trans,$Sv2_Class_Trans,$Sv3_Class_Trans,$HD1_1O,$HD1_2O,$HD1_3O,$HD25_1O,$HD25_2O,$HD25_3O,$HD50_1O,$HD50_2O,$HD50_3O,$HD75_1O,$HD75_2O,$HD75_3O,$HD100_1O,$HD100_2O,$HD100_3O,$VD1_1O,$VD1_2O,$VD1_3O,$VD25_1O,$VD25_2O,$VD25_3O,$VD50_1O,$VD50_2O,$VD50_3O,$VD75_1O,$VD75_2O,$VD75_3O,$VD100_1O,$VD100_2O,$VD100_3O,$Po1_1O,$Po1_2O,$Po1_3O,$PoD25_1O,$PoD25_2O,$PoD25_3O,$PoD50_1O,$PoD50_2O,$PoD50_3O,$PoD75_1O,$PoD75_2O,$PoD75_3O,$PoD100_1O,$PoD100_2O,$PoD100_3O,$Pz1_1O,$Pz1_2O,$Pz1_3O,$PzD25_1O,$PzD25_2O,$PzD25_3O,$PzD50_1O,$PzD50_2O,$PzD50_3O,$PzD75_1O,$PzD75_2O,$PzD75_3O,$PzD100_1O,$PzD100_2O,$PzD100_3O,$Cg1_1O,$Cg1_2O,$Cg1_3O,$CgD25_1O,$CgD25_2O,$CgD25_3O,$CgD50_1O,$CgD50_2O,$CgD50_3O,$CgD75_1O,$CgD75_2O,$CgD75_3O,$CgD100_1O,$CgD100_2O,$CgD100_3O,$Ss1_1O,$Ss1_2O,$Ss1_3O,$SsD25_1O,$SsD25_2O,$SsD25_3O,$SsD50_1O,$SsD50_2O,$SsD50_3O,$SsD75_1O,$SsD75_2O,$SsD75_3O,$SsD100_1O,$SsD100_2O,$SsD100_3O,$Sv1_1O,$Sv1_2O,$Sv1_3O,$SvD25_1O,$SvD25_2O,$SvD25_3O,$SvD50_1O,$SvD50_2O,$SvD50_3O,$SvD75_1O,$SvD75_2O,$SvD75_3O,$SvD100_1O,$SvD100_2O,$SvD100_3O,X\n";
+
+}
+
+sub First_Occ_Dist{
+my ($N_seq,$N_n) = @_;
+     $N_seq=~m/$N_n/g;
+     return pos($N_seq);
+}
+sub Count_Dist_Occur{
+my ($Num_seq,$Num_num,$Num_occ) = @_;
+
+    $count_D = 0;
+    while ($Num_seq =~ m/$Num_num/g) {
+    if (++$count_D == $Num_occ) {
+        return pos($Num_seq);
+    }
+    }
+
+}
+
+sub Composition_Calc{
+
+my ($T_in,$Chk_in) = @_;
+     $Xc = ($T_in =~s/$Chk_in/$Chk_in/g);
+
+return $Xc;
+}
+
+sub CLASS_PARSE_BR
+{
+my($seq_param,$LABBR)=@_;
+
+     $seq_param = uc $seq_param;
+     #HYDRO CLASS SEQUENCE CALC
+     $HCLASS_Seq = $seq_param;
+     $HCLASS_Seq =~ s/[RKEDQN]/1/g;
+     $HCLASS_Seq =~ s/[GASTPHY]/2/g;
+     $HCLASS_Seq =~ s/[CLVIMFW]/3/g;
+
+     $BrHCLASS = &BrFreq($HCLASS_Seq);
+
+     #Vander CLASS SEQUENCE CALC
+     $VwCLASS_Seq = $seq_param;
+     $VwCLASS_Seq =~ s/[GASTPDC]/1/g;
+     $VwCLASS_Seq =~ s/[NVEQIL]/2/g;
+     $VwCLASS_Seq =~ s/[MHKFRYW]/3/g;
+
+     $BrVwCLASS = &BrFreq($VwCLASS_Seq);
+
+     #Polariz CLASS SEQUENCE CALC
+     $PoCLASS_Seq = $seq_param;
+     $PoCLASS_Seq =~ s/[LIFWCMVY]/1/g;
+     $PoCLASS_Seq =~ s/[PATGS]/2/g;
+     $PoCLASS_Seq =~ s/[HQRKNED]/3/g;
+
+     $BrPoCLASS = &BrFreq($PoCLASS_Seq);
+
+     #Pz CLASS SEQUENCE CALC
+     $PzCLASS_Seq = $seq_param;
+     $PzCLASS_Seq =~ s/[GASDT]/1/g;
+     $PzCLASS_Seq =~ s/[CPNVEQIL]/2/g;
+     $PzCLASS_Seq =~ s/[KMHFRYW]/3/g;
+
+     $BrPzCLASS = &BrFreq($PzCLASS_Seq);
+
+     #Charge CLASS SEQUENCE CALC
+     $CgCLASS_Seq = $seq_param;
+     $CgCLASS_Seq =~ s/[KR]/1/g;
+     $CgCLASS_Seq =~ s/[ANCQGHILMFPSTWYV]/2/g;
+     $CgCLASS_Seq =~ s/[DE]/3/g;
+
+     $BrCgCLASS = &BrFreq($CgCLASS_Seq);
+
+     #Ss CLASS SEQUENCE CALC
+     $SsCLASS_Seq = $seq_param;
+     $SsCLASS_Seq =~ s/[EALMQKRH]/1/g;
+     $SsCLASS_Seq =~ s/[VIYCWFT]/2/g;
+     $SsCLASS_Seq =~ s/[GNPSD]/3/g;
+
+     $BrSsCLASS = &BrFreq($SsCLASS_Seq);
+
+     #Sv CLASS SEQUENCE CALC
+     $SvCLASS_Seq = $seq_param;
+     $SvCLASS_Seq =~ s/[ALFCGIVW]/1/g;
+     $SvCLASS_Seq =~ s/[RKQEND]/2/g;
+     $SvCLASS_Seq =~ s/[MPSTHY]/3/g;
+
+     $BrSvCLASS = &BrFreq($SvCLASS_Seq);
+
+     #$Br_result = $BrHCLASS.$BrVwCLASS.$BrPoCLASS.$BrPzCLASS.$BrCgCLASS.$BrSsCLASS.$BrSvCLASS. $LABBR."\n";
+     $Br_result = $BrHCLASS.$BrVwCLASS.$BrPoCLASS.$BrPzCLASS.$BrCgCLASS.$BrSsCLASS.$BrSvCLASS;
+     return ($Br_result);
+}
+sub BrFreq{
+my ($In_seq_num,$Br_Lab) = @_;
+@Posibility = qw (111 112 113 121 122 123 131 132 133 211 212 213 221 222 223 231 232 233 311 312 313 321 322 323 331 332 333);
+$q_num="";
+for($rt=0;$rt<@Posibility;$rt++){
+     $t_num = ($In_seq_num =~s/@Posibility[$rt]/@Posibility[$rt]/g)/(length($In_seq_num)/3);
+     $q_num.="$t_num,";
+
+}
+#$q_num.= "$Br_Lab\n";
+return $q_num;
+}
+############
+sub TestArff{
+my($label1,$label2,$PREDICT,$F,$C_Attri)= @_;
+    $PREDICT=~s/X/$label1/g;
+    if($C_Attri == "44"){
+        $TEST ="\@relation whatever \n \@attribute 1 numeric\n\@attribute 2 numeric\n\@attribute 3 numeric\n\@attribute 4 numeric\n\@attribute 5 numeric\n\@attribute 6 numeric\n\@attribute 7 numeric\n\@attribute 8 numeric\n\@attribute 9 numeric\n\@attribute 10 numeric\n\@attribute 11 numeric\n\@attribute 12 numeric\n\@attribute 13 numeric\n\@attribute 14 numeric\n\@attribute 15 numeric\n\@attribute 16 numeric\n\@attribute 17 numeric\n\@attribute 18 numeric\n\@attribute 19 numeric\n\@attribute 20 numeric\n\@attribute 21 numeric\n\@attribute 22 numeric\n\@attribute 23 numeric\n\@attribute 24 numeric\n\@attribute 25 numeric\n\@attribute 26 numeric\n\@attribute 27 numeric\n\@attribute 28 numeric\n\@attribute 29 numeric\n\@attribute 30 numeric\n\@attribute 31 numeric\n\@attribute 32 numeric\n\@attribute 33 numeric\n\@attribute 34 numeric\n\@attribute 35 numeric\n\@attribute 36 numeric\n\@attribute 37 numeric\n\@attribute 38 numeric\n\@attribute 39 numeric\n\@attribute 40 numeric\n\@attribute 41 numeric\n\@attribute 42 numeric\n\@attribute 43 numeric\n\@attribute LABEL {$label1,$label2}\n\n\@data\n$PREDICT";
+    }elsif($C_Attri == "31"){
+        $TEST ="\@relation whatever \n \@attribute 1 numeric\n\@attribute 2 numeric\n\@attribute 3 numeric\n\@attribute 4 numeric\n\@attribute 5 numeric\n\@attribute 6 numeric\n\@attribute 7 numeric\n\@attribute 8 numeric\n\@attribute 9 numeric\n\@attribute 10 numeric\n\@attribute 11 numeric\n\@attribute 12 numeric\n\@attribute 13 numeric\n\@attribute 14 numeric\n\@attribute 15 numeric\n\@attribute 16 numeric\n\@attribute 17 numeric\n\@attribute 18 numeric\n\@attribute 19 numeric\n\@attribute 20 numeric\n\@attribute 21 numeric\n\@attribute 22 numeric\n\@attribute 23 numeric\n\@attribute 24 numeric\n\@attribute 25 numeric\n\@attribute 26 numeric\n\@attribute 27 numeric\n\@attribute 28 numeric\n\@attribute 29 numeric\n\@attribute 30 numeric\n\@attribute LABEL {$label1,$label2}\n\n\@data\n$PREDICT";
+    }elsif($C_Attri == "60"){
+        $TEST ="\@relation whatever \n \@attribute 1 numeric\n\@attribute 2 numeric\n\@attribute 3 numeric\n\@attribute 4 numeric\n\@attribute 5 numeric\n\@attribute 6 numeric\n\@attribute 7 numeric\n\@attribute 8 numeric\n\@attribute 9 numeric\n\@attribute 10 numeric\n\@attribute 11 numeric\n\@attribute 12 numeric\n\@attribute 13 numeric\n\@attribute 14 numeric\n\@attribute 15 numeric\n\@attribute 16 numeric\n\@attribute 17 numeric\n\@attribute 18 numeric\n\@attribute 19 numeric\n\@attribute 20 numeric\n\@attribute 21 numeric\n\@attribute 22 numeric\n\@attribute 23 numeric\n\@attribute 24 numeric\n\@attribute 25 numeric\n\@attribute 26 numeric\n\@attribute 27 numeric\n\@attribute 28 numeric\n\@attribute 29 numeric\n\@attribute 30 numeric\n\@attribute 31 numeric\n\@attribute 32 numeric\n\@attribute 33 numeric\n\@attribute 34 numeric\n\@attribute 35 numeric\n\@attribute 36 numeric\n\@attribute 37 numeric\n\@attribute 38 numeric\n\@attribute 39 numeric\n\@attribute 40 numeric\n\@attribute 41 numeric\n\@attribute 42 numeric\n\@attribute 43 numeric\n\@attribute 44 numeric\n\@attribute 45 numeric\n\@attribute 46 numeric\n\@attribute 47 numeric\n\@attribute 48 numeric\n\@attribute 49 numeric\n\@attribute 50 numeric\n\@attribute 51 numeric\n\@attribute 52 numeric\n\@attribute 53 numeric\n\@attribute 54 numeric\n\@attribute 55 numeric\n\@attribute 56 numeric\n\@attribute 57 numeric\n\@attribute 58 numeric\n\@attribute 59 numeric\n\@attribute 60 numeric\n\@attribute LABEL {$label1,$label2}\n\n\@data\n$PREDICT";
+    }
+    &Vec_save($F,$TEST);
+}
+sub Vec_open{
+
+my ($x) = @_;
+     open(FIL,"$x");
+     @Vector = <FIL>;
+     close(FIL);
+return @Vector;
+}
+
+sub Vec_save{
+
+my ($y,$con)= @_;
+     open (TT,">$y");
+     print TT $con;
+     close(TT);
+}
+sub ML_Test{
+my($MODEL,$fil,$xsav)= @_;
+    $result = `java -classpath $CLASSPATH:weka.jar weka.classifiers.meta.AdaBoostM1 -T $fil -l $MODEL -p 0`;
+    $result=~s/ //g;
+    @Cont = split('\n',$result);
+    return @Cont;
+}
+#sub ML_Test_SVM{
+#my($MODEL,$fil,$xsav)= @_;
+#    $resultsvm = `java -classpath $CLASSPATH:weka.jar weka.classifiers.meta.AdaBoostLibSVM -T $fil -l $MODEL -p 0`;
+#    $resultsvm=~s/ //g;
+#    @Contsvm = split('\n',$resultsvm);
+#    return @Contsvm;
+#}
+###########################FUZZY
+sub Arginine_Chk{
+my ($inp,$la,$len) = @_;
+     $F16 = substr($inp,0,$len);
+     #$F16 = substr($inp,0,16);
+     $F = ($F16=~s/$la/$la/g);
+     if($F eq ""){
+         $F = 0;
+     }else{
+         $F = ($F/20)*100;
+     }
+
+     return $F;
+}
+
+sub SIM_VOTE{ #Performs Local Blast against database; Parameter -- none; returns Max similarity with Location;
+
+my ($Xtreme_Seq) = @_;
+$Xtreme_File = int rand(99999)."fasta";
+$Xtreme_File = "\/var\/www\/html\/pcmpred\/temp\/".$Xtreme_File;
+&Vec_save($Xtreme_File,$Xtreme_Seq);
+    $Vote_Chloro = &BLAST_SIMILARITY("blastp -db chloroplast -query $Xtreme_File",'C');
+    $Vote_Mito = &BLAST_SIMILARITY("blastp -db mitochondrion -query $Xtreme_File",'M');
+    $Vote_Other =  &BLAST_SIMILARITY("blastp -db others -query $Xtreme_File",'O');
+
+    unlink($Xtreme_File);
+   #
+#     if(($Vote_Chloro >= $Vote_Mito) && ($Vote_Chloro >= $Vote_Other)){
+#          return "C"."($Vote_Chloro)";
+#     }elsif(($Vote_Mito >= $Vote_Chloro) && ($Vote_Mito >= $Vote_Other)){
+#          return "M"."($Vote_Mito)";
+#     }elsif(($Vote_Other >= $Vote_Mito) && ($Vote_Other >= $Vote_Chloro)){
+#          return "O"."($Vote_Other)";
+#     }
+      #$O_Loc_Score+= $Vote_Other;
+      #$P_Loc_Score+= $Vote_Chloro;
+      #$M_Loc_Score+= $Vote_Mito;
+      return $Vote_Chloro."\n".$Vote_Mito."\n".$Vote_Other;
+
+}
+
+sub BLAST_SIMILARITY{#Parses the blast out put for query seq; Parameter -- balst query cmd; returns similarity percentage;
+    my $query_cmd = $_[0];
+    $FB = $_[1];
+    $xtr = `$query_cmd`;
+
+if($xtr!~/No hits found/gi){
+    $xtr =~m/Length\=(.*)/g;
+    $Bp_Len = $1;
+    $xtr =~m/Identities \=(.*) Pos/;
+    $xtr = $1;
+    $xtr =~m/ (.*)\//g;
+    $r = $1;
+    $Similarity = ($r/$Bp_Len);
+    return $Similarity;
+}else{
+    return 0;
+}
+}
