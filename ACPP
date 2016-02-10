@@ -533,7 +533,10 @@ my ($y,$con)= @_;
 }
 sub ML_Test{
 my($MODEL,$fil,$xsav)= @_;
-    $result = `java -classpath weka.jar weka.Run weka.classifiers.functions.LibSVM -T $fil -l $MODEL -p 0`;
+    $Tree_path = `pwd`;
+    $Tree_path .= '/wekafiles';	
+    $Tree_path=~s/\n//g;		
+    $result = `java -DWEKA_HOME=$Tree_path -classpath weka.jar weka.Run weka.classifiers.functions.LibSVM -T $fil -l $MODEL -p 0`;
     $result=~s/ //g;
     @Cont = split('\n',$result);
     return @Cont;
