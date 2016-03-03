@@ -1,176 +1,23 @@
-2016-02-10 15:57:40 weka.core.WekaPackageManager main
+2016-02-24 11:58:43 weka.gui.GUIChooser main
 INFO: Logging started
-There are new packages at the repository. Refreshing cache...
-Refresh in progress. Please wait...
-Fetching meta data for AnDE
-Fetching meta data for ArabicStemmers_LightStemmers
-Fetching meta data for CAAR
-Fetching meta data for CHIRP
-Fetching meta data for CLOPE
-Fetching meta data for CVAttributeEval
-Fetching meta data for DMNBtext
-Fetching meta data for DTNB
-Fetching meta data for DilcaDistance
-Fetching meta data for DistributionBasedBalance
-Fetching meta data for EAR4
-Fetching meta data for EBMC
-Fetching meta data for EMImputation
-Fetching meta data for EvolutionarySearch
-Fetching meta data for GPAttributeGeneration
-Fetching meta data for HMM
-Fetching meta data for IBkLG
-Fetching meta data for IWSS
-Fetching meta data for IWSSembeddedNB
-Fetching meta data for J48Consolidated
-Fetching meta data for J48graft
-Fetching meta data for JDBCDriversDummyPackage
-Fetching meta data for LVQ
-Fetching meta data for LibLINEAR
-Fetching meta data for LibSVM
-Fetching meta data for MODLEM
-Fetching meta data for MTreeClusterer
-Fetching meta data for MultiObjetiveEvolutionarySearch
-Fetching meta data for NNge
-Fetching meta data for OpenmlWeka
-Fetching meta data for PCP
-Fetching meta data for PSOSearch
-Fetching meta data for PyScript
-Fetching meta data for PyScriptClassifier
-Fetching meta data for RBFNetwork
-Fetching meta data for RPlugin
-Fetching meta data for RankerByDTClassification
-Fetching meta data for RerankingSearch
-Fetching meta data for SMOTE
-Fetching meta data for SPMFWrapper
-Fetching meta data for SPegasos
-Fetching meta data for SSF
-Fetching meta data for SVMAttributeEval
-Fetching meta data for SelfOrganizingMap
-Fetching meta data for SparseGenerativeModel
-Fetching meta data for StudentFilters
-Fetching meta data for TPP
-Fetching meta data for WekaExcel
-Fetching meta data for WekaODF
-Fetching meta data for XMeans
-Fetching meta data for alternatingDecisionTrees
-Fetching meta data for alternatingModelTrees
-Fetching meta data for anonymizationPackage
-Fetching meta data for arxAnonymizer
-Fetching meta data for associationRulesVisualizer
-Fetching meta data for attributeSelectionSearchMethods
-Fetching meta data for averagedOneDependenceEstimators
-Fetching meta data for baggedLocalOutlierFactor
-Fetching meta data for bayesianLogisticRegression
-Fetching meta data for bestFirstTree
-Fetching meta data for cascadeKMeans
-Fetching meta data for cassandraConverters
-Fetching meta data for chiSquaredAttributeEval
-Fetching meta data for citationKNN
-Fetching meta data for classAssociationRules
-Fetching meta data for classificationViaClustering
-Fetching meta data for classificationViaRegression
-Fetching meta data for classifierBasedAttributeSelection
-Fetching meta data for classifierErrors
-Fetching meta data for clojureClassifier
-Fetching meta data for complementNaiveBayes
-Fetching meta data for conjunctiveRule
-Fetching meta data for consistencySubsetEval
-Fetching meta data for costSensitiveAttributeSelection
-Fetching meta data for dagging
-Fetching meta data for decorate
-Fetching meta data for denormalize
-Fetching meta data for discriminantAnalysis
-Fetching meta data for distributedWekaBase
-Fetching meta data for distributedWekaHadoop
-Fetching meta data for distributedWekaHadoop2
-Fetching meta data for distributedWekaHadoop2Libs
-Fetching meta data for distributedWekaHadoopCore
-Fetching meta data for distributedWekaHadoopLibs
-Fetching meta data for distributedWekaSpark
-Fetching meta data for elasticNet
-Fetching meta data for ensembleLibrary
-Fetching meta data for ensemblesOfNestedDichotomies
-Fetching meta data for extraTrees
-Fetching meta data for fastCorrBasedFS
-Fetching meta data for filteredAttributeSelection
-Fetching meta data for functionalTrees
-Fetching meta data for fuzzyLaticeReasoning
-Fetching meta data for fuzzyUnorderedRuleInduction
-Fetching meta data for gaussianProcesses
-Fetching meta data for generalizedSequentialPatterns
-Fetching meta data for grading
-Fetching meta data for graphgram
-Fetching meta data for gridSearch
-Fetching meta data for hiddenNaiveBayes
-Fetching meta data for hiveJDBC
-Fetching meta data for hotSpot
-Fetching meta data for hyperPipes
-Fetching meta data for imageFilters
-Fetching meta data for isolationForest
-Fetching meta data for isotonicRegression
-Fetching meta data for iterativeAbsoluteErrorRegression
-Fetching meta data for jfreechartOffscreenRenderer
-Fetching meta data for jsonFieldExtractor
-Fetching meta data for kernelLogisticRegression
-Fetching meta data for kfGroovy
-Fetching meta data for kfKettle
-Fetching meta data for kfPMMLClassifierScoring
-Fetching meta data for latentSemanticAnalysis
-Fetching meta data for lazyAssociativeClassifier
-Fetching meta data for lazyBayesianRules
-Fetching meta data for leastMedSquared
-Fetching meta data for levenshteinEditDistance
-Fetching meta data for linearForwardSelection
-Fetching meta data for localOutlierFactor
-Fetching meta data for massiveOnlineAnalysis
-Fetching meta data for metaCost
-Fetching meta data for multiBoostAB
-Fetching meta data for multiInstanceFilters
-Fetching meta data for multiInstanceLearning
-Fetching meta data for multiLayerPerceptrons
-Fetching meta data for multilayerPerceptronCS
-Fetching meta data for naiveBayesTree
-Fetching meta data for niftiLoader
-Fetching meta data for normalize
-Fetching meta data for oneClassClassifier
-Fetching meta data for optics_dbScan
-Fetching meta data for ordinalClassClassifier
-Fetching meta data for ordinalLearningMethod
-Fetching meta data for ordinalStochasticDominance
-Fetching meta data for paceRegression
-Fetching meta data for partialLeastSquares
-Fetching meta data for percentageErrorMetrics
-Fetching meta data for predictiveApriori
-Fetching meta data for prefuseGraph
-Fetching meta data for prefuseGraphViewer
-Fetching meta data for prefuseTree
-Fetching meta data for probabilisticSignificanceAE
-Fetching meta data for raceSearch
-Fetching meta data for racedIncrementalLogitBoost
-Fetching meta data for realAdaBoost
-Fetching meta data for regressionByDiscretization
-Fetching meta data for ridor
-Fetching meta data for rotationForest
-Fetching meta data for sasLoader
-Fetching meta data for scatterPlot3D
-Fetching meta data for scriptingClassifiers
-Fetching meta data for sequentialInformationalBottleneckClusterer
-Fetching meta data for simpleCART
-Fetching meta data for simpleEducationalLearningSchemes
-Fetching meta data for stackingC
-Fetching meta data for supervisedAttributeScaling
-Fetching meta data for tabuAndScatterSearch
-Fetching meta data for tertius
-Fetching meta data for thresholdSelector
-Fetching meta data for tigerjython
-Fetching meta data for timeSeriesFilters
-Fetching meta data for timeseriesForecasting
-Fetching meta data for userClassifier
-Fetching meta data for votingFeatureIntervals
-Fetching meta data for wavelet
-Fetching meta data for wekaPython
-Fetching meta data for wekaServer
-Fetching meta data for winnow
+Refreshing GOE props...
+---Registering Weka Editors---
+Trying to add database driver (JDBC): RmiJdbc.RJDriver - Warning, not in CLASSPATH?
+Trying to add database driver (JDBC): jdbc.idbDriver - Warning, not in CLASSPATH?
+Trying to add database driver (JDBC): org.gjt.mm.mysql.Driver - Warning, not in CLASSPATH?
+Trying to add database driver (JDBC): com.mckoi.JDBCDriver - Warning, not in CLASSPATH?
+Trying to add database driver (JDBC): org.hsqldb.jdbcDriver - Warning, not in CLASSPATH?
+[KnowledgeFlow] Loading properties and plugins...
+[KnowledgeFlow] Initializing KF...
+[DefaultPackageManager] removing: /home/brsaran/wekafiles/packages/LibSVM/Description.props
+[DefaultPackageManager] removing: /home/brsaran/wekafiles/packages/LibSVM/build_package.xml
+[DefaultPackageManager] removing: /home/brsaran/wekafiles/packages/LibSVM/pom.xml
+[DefaultPackageManager] removing: /home/brsaran/wekafiles/packages/LibSVM/LibSVM.jar
+[DefaultPackageManager] removing: /home/brsaran/wekafiles/packages/LibSVM
+[KnowledgeFlow] Initializing KF...
+http://prdownloads.sourceforge.net/weka/LibSVM1.0.4.zip?download
+[DefaultPackageManager] Tmp file: /tmp/LibSVM1.0.45150491865243528416.zip
+[DefaultPackageManager] downloaded 111 KB
 [DefaultPackageManager] Installing: Description.props
 [DefaultPackageManager] Installing: LibSVM.jar
 [DefaultPackageManager] Installing: build_package.xml
@@ -183,20 +30,17 @@ Fetching meta data for winnow
 [DefaultPackageManager] Installing: doc/index.html
 [DefaultPackageManager] Installing: doc/overview-tree.html
 [DefaultPackageManager] Installing: doc/package-list
-[DefaultPackageManager] Installing: doc/resources/background.gif
 [DefaultPackageManager] Installing: doc/resources/inherit.gif
-[DefaultPackageManager] Installing: doc/resources/tab.gif
-[DefaultPackageManager] Installing: doc/resources/titlebar.gif
-[DefaultPackageManager] Installing: doc/resources/titlebar_end.gif
 [DefaultPackageManager] Installing: doc/serialized-form.html
 [DefaultPackageManager] Installing: doc/stylesheet.css
 [DefaultPackageManager] Installing: doc/weka/classifiers/functions/LibSVM.html
-[DefaultPackageManager] Installing: doc/weka/classifiers/functions/class-use/LibSVM.html
 [DefaultPackageManager] Installing: doc/weka/classifiers/functions/package-frame.html
 [DefaultPackageManager] Installing: doc/weka/classifiers/functions/package-summary.html
 [DefaultPackageManager] Installing: doc/weka/classifiers/functions/package-tree.html
-[DefaultPackageManager] Installing: doc/weka/classifiers/functions/package-use.html
 [DefaultPackageManager] Installing: lib/libsvm.jar
 [DefaultPackageManager] Installing: pom.xml
 [DefaultPackageManager] Installing: src/main/java/weka/classifiers/functions/LibSVM.java
 [DefaultPackageManager] Installing: src/test/java/weka/classifiers/functions/LibSVMTest.java
+URL file:/home/brsaran/wekafiles/packages/LibSVM/lib/libsvm.jar is already in the CLASSPATH
+URL file:/home/brsaran/wekafiles/packages/LibSVM/LibSVM.jar is already in the CLASSPATH
+[KnowledgeFlow] Initializing KF...
