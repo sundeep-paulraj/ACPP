@@ -13,4 +13,4 @@ If multiple sequence option is opted, only a maximum of 100 peptides are allowed
 
 If protein scan is opted, the maximum length of the input protein should not exceed 2000.
 
-Results are self descriptive. When the treshold is set to 0.5, the SVM score close to 1 is considered as anticancer peptides, while close to 0 it is considered as non-anticancer peptides. (Refer article for details). 
+Results are self descriptive. Kindly DO MENTION THE THRESHOLD value (between 0 and 1) when prompted. When the treshold is set to 0.5, the SVM score close to 1 is considered as anticancer peptides, while close to 0 it is considered as non-anticancer peptides. (Refer article for details). 
