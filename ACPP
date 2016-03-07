@@ -314,21 +314,21 @@ $Mid1 = "Parameters Selected:\nInput file:".$new_fil."\nMode:".$Seq_Type1."\nThr
 
 if($Seq_Type eq 'MNM'){
 	for($i=0;$i<@C_Loc_Score;$i++){
-		if(length($Rawseq1[$i+1])>50){substr($Rawseq1[$i+1],50,0)="\n";}
-		if(length($Rawseq1[$i+1])>100){substr($Rawseq1[$i+1],100,0)="\n";}		
+		#if(length($Rawseq1[$i+1])>50){substr($Rawseq1[$i+1],50,0)="\n";}
+		#if(length($Rawseq1[$i+1])>100){substr($Rawseq1[$i+1],100,0)="\n";}		
 		$Mid2.= $FASTA_Header[$i+1].','.$Rawseq1[$i+1].','.$Pred_out[$i].','.sprintf("%.2f",$C_Loc_Score[$i]).','.$Mol_W_Array[$i+1].','.$H_Phobic_Val[$i+1].','.$H_Philic_Val[$i+1].','.$H_Charge_Val[$i+1]."\n";
 	}
 }elsif($Seq_Type eq 'SM'){
 	for($i=0;$i<@C_Loc_Score;$i++){
-		if(length($Rawseq1[$i])>50){substr($Rawseq1[$i],50,0)="\n";}
-		if(length($Rawseq1[$i])>100){substr($Rawseq1[$i],100,0)="\n";}		
+		#if(length($Rawseq1[$i])>50){substr($Rawseq1[$i],50,0)="\n";}
+		#if(length($Rawseq1[$i])>100){substr($Rawseq1[$i],100,0)="\n";}		
 		$Mid2.= $Motif_in[$i].','.$Rawseq1[$i+1].','.$Pred_out[$i].','.sprintf("%.2f",$C_Loc_Score[$i]).','.$Mol_W_Array[$i+1].','.$H_Phobic_Val[$i+1].','.$H_Philic_Val[$i+1].','.$H_Charge_Val[$i+1]."\n";
 	}	
 }elsif($Seq_Type eq 'SCAN'){
 		$Mid1.="Pepetide Length:".$Pep_LEN."\n";		
 	for($i=0;$i<@C_Loc_Score;$i++){
-		if(length($Rawseq1[$i])>50){substr($Rawseq1[$i],50,0)="\n";}
-		if(length($Rawseq1[$i])>100){substr($Rawseq1[$i],100,0)="\n";}
+		#if(length($Rawseq1[$i])>50){substr($Rawseq1[$i],50,0)="\n";}
+		#if(length($Rawseq1[$i])>100){substr($Rawseq1[$i],100,0)="\n";}
 		$Mid2.= $Scan_Header[$i].','.$Rawseq1[$i].','.$Pred_out[$i].','.sprintf("%.2f",$C_Loc_Score[$i]).','.$Mol_W_Array[$i].','.$H_Phobic_Val[$i].','.$H_Philic_Val[$i].','.$H_Charge_Val[$i]."\n";
 	}	
 }
