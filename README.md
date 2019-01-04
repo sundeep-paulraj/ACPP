@@ -8,14 +8,16 @@ Refer: ["ACPP: A Web Server for Prediction and Design of Anti-cancer Peptides." 
 
 2. Installation
    ============
-   Linux OS
+2.1 Linux OS
    (a) Download ACPP from github.
    (b) Extract the files to the desired location.
    (c) Provide executable permission to ACPP file (if it doesn't have executable rights).
    (d) Provide read and write permission to the folder you are putting the extacted files (if it doesn't have read and write permission).
    (e) make sure java 1.6 or higher is installed in your system.
    (f) make sure PERL 5.0 or higher version is installed in your system.
-   
+
+2.2 Running the application as a Docker contianer
+    <<TO_DO>>
    3. Instructions
    ===============
     Execute the program by typing the following command after installation.
