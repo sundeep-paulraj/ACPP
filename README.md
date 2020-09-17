@@ -1,3 +1,5 @@
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sundeepk1_ACPP&metric=alert_status)](https://sonarcloud.io/dashboard?id=sundeepk1_ACPP)
+
 # ACPP
 Anti Cancer Peptide Predictor
 
