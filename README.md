@@ -4,7 +4,7 @@ Anti Cancer Peptide Predictor
 1. Introduction
    =============
     ACPP is a Support Vector Machine based tool to predict whether the given peptide is an Anti-cancer peptide or Not. The three different modes include (i) Protein scan with apoptotic domain prediction; (ii) Multiple peptide mode; and (iii) Peptide mutation mode for prediction and design of anti-cancer peptides.
-Refer: ["ACPP: A Web Server for Prediction and Design of Anti-cancer Peptides." International Journal of Peptide Research and Therapeutics 21.1 (2015): 99-106"](http://link.springer.com/article/10.1007%2Fs10989-014-9435-7) for more deatils.
+Refer: ["ACPP: A Web Server for Prediction and Design of Anti-cancer Peptides." International Journal of Peptide Research and Therapeutics 21.1 (2015): 99-106"](http://link.springer.com/article/10.1007%2Fs10989-014-9435-7) for more deatils. Supplementary file could be found above as file named "supp.rar"
 
 2. Installation
    ============
